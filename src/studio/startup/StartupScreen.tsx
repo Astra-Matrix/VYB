@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../../ui/components/Button';
 import { GlassPanel } from '../../ui/components/GlassPanel';
 import { TextField } from '../../ui/components/TextField';
 import { useAppState } from '../../app/state/useAppState';
 import { useNavigate } from 'react-router-dom';
-import { createSampleScene } from '../../engine/scene';
-import { AssetRegistry } from '../../engine/assets/AssetRegistry';
-import { createVybProject as createVybProjectCmd, chooseDirectory, validateVybProject } from '../../app/commands/tauriCommands';
+import { chooseDirectory } from '../../app/commands/tauriCommands';
+import {
+  bootstrapBundledSampleProject,
+  bootstrapProjectAtPath,
+  createProjectWorkspace,
+} from '../../app/workspace/projectWorkspace';
 import { createSampleNodeGraph } from '../../engine/visual-scripting';
+import { isTauri } from '../../app/platform/isTauri';
 
-// Local-only recent project cache.
 const RECENT_KEY = 'vyb:recentProjects:v1';
 type RecentEntry = { rootPath: string; name: string; at: string };
 
@@ -29,11 +32,8 @@ function saveRecent(entries: RecentEntry[]) {
 
 export function StartupScreen() {
   const navigate = useNavigate();
-  const openProject = useAppState((s) => s.actions.openProject);
-  const setScene = useAppState((s) => s.actions.setScene);
-  const selectEntity = useAppState((s) => s.actions.selectEntity);
+  const applyWorkspace = useAppState((s) => s.actions.applyWorkspace);
   const setNodeGraph = useAppState((s) => s.actions.setNodeGraph);
-  const setAssetRegistry = useAppState((s) => s.actions.setAssetRegistry);
   const setSettingsOpen = useAppState((s) => s.actions.setSettingsOpen);
   const pushConsole = useAppState((s) => s.actions.pushConsole);
 
@@ -45,79 +45,40 @@ export function StartupScreen() {
     setRecent(loadRecent());
   }, []);
 
-  const assetRegistry = useMemo(() => {
-    const ar = new AssetRegistry();
-    // Scaffold: we keep this deterministic so the UI stays functional.
-    const files = [
-      'assets/mesh/unit-cube.glb',
-      'assets/texture/diffuse.png',
-      'assets/shaders/default.wgsl',
-      'assets/audio/placeholder.wav',
-      'scripts/player.ts',
-    ];
-    ar.scanFiles(files, { knownExtensionsOnly: true });
-    return ar;
-  }, []);
+  function rememberRecent(rootPath: string, name: string) {
+    const entry: RecentEntry = { rootPath, name, at: new Date().toISOString() };
+    const nextRecent = [entry, ...recent.filter((r) => r.rootPath !== rootPath)].slice(0, 12);
+    setRecent(nextRecent);
+    saveRecent(nextRecent);
+  }
+
+  async function enterStudio(workspace: Awaited<ReturnType<typeof bootstrapProjectAtPath>>) {
+    applyWorkspace(workspace);
+    setNodeGraph(createSampleNodeGraph());
+    rememberRecent(workspace.rootPath, workspace.project.name);
+    pushConsole({ level: 'info', message: `Opened project: ${workspace.project.name}` });
+    navigate('/studio');
+  }
 
   async function handleCreate() {
     setIsBusy(true);
     try {
+      if (!isTauri()) {
+        const workspace = await bootstrapBundledSampleProject(createName.trim());
+        await enterStudio(workspace);
+        return;
+      }
+
       const rootPath = await chooseDirectory();
       if (!rootPath) return;
 
-      // Try real project creation through the Rust backend command.
-      // If backend is not yet running, fallback to in-memory mock project.
-      let project: any;
-      try {
-        const result = await createVybProjectCmd({ name: createName.trim(), rootPath });
-        project = {
-          name: createName.trim(),
-          version: '0.1.0',
-          engineVersion: '0.1.0',
-          createdAt: result.createdAt ?? new Date().toISOString(),
-          modifiedAt: new Date().toISOString(),
-          targetPlatforms: ['windows', 'macos', 'linux'],
-          renderingMode: 'webgpu',
-          assetFolders: ['assets', 'scenes', 'scripts', 'materials', 'shaders', 'audio', 'ui'],
-          scenes: ['scenes/main.vybscene'],
-          plugins: [],
-          scriptingLanguages: ['typescript', 'javascript'],
-          importCompatibility: {},
-          description: 'Created from VYB scaffold',
-        };
-      } catch {
-        project = {
-          name: createName.trim(),
-          version: '0.1.0',
-          engineVersion: '0.1.0',
-          createdAt: new Date().toISOString(),
-          modifiedAt: new Date().toISOString(),
-          targetPlatforms: ['windows', 'macos', 'linux'],
-          renderingMode: 'webgpu',
-          assetFolders: ['assets', 'scenes', 'scripts', 'materials', 'shaders', 'audio', 'ui'],
-          scenes: ['scenes/main.vybscene'],
-          plugins: [],
-          scriptingLanguages: ['typescript', 'javascript'],
-          importCompatibility: {},
-          description: 'Created (mock) because backend command is unavailable.',
-        };
-      }
-
-      openProject({ rootPath, project });
-
-      const sceneData = createSampleScene();
-      setScene(sceneData.scene);
-      selectEntity(sceneData.cubeEntityId);
-      setNodeGraph(createSampleNodeGraph());
-
-      setAssetRegistry(assetRegistry.getAllAssets(), new Date().toISOString());
-
-      const entry: RecentEntry = { rootPath, name: project.name, at: new Date().toISOString() };
-      const nextRecent = [entry, ...recent.filter((r) => r.rootPath !== rootPath)].slice(0, 12);
-      setRecent(nextRecent);
-      saveRecent(nextRecent);
-
-      navigate('/studio');
+      const workspace = await createProjectWorkspace(createName.trim(), rootPath);
+      await enterStudio(workspace);
+    } catch (e) {
+      pushConsole({
+        level: 'error',
+        message: `Create project failed: ${e instanceof Error ? e.message : String(e)}`,
+      });
     } finally {
       setIsBusy(false);
     }
@@ -126,79 +87,45 @@ export function StartupScreen() {
   async function handleOpenExisting() {
     setIsBusy(true);
     try {
+      if (!isTauri()) {
+        const workspace = await bootstrapBundledSampleProject();
+        await enterStudio(workspace);
+        return;
+      }
+
       const rootPath = await chooseDirectory();
       if (!rootPath) return;
 
-      try {
-        const result = await validateVybProject(rootPath);
-        if (!result.valid) {
-          pushConsole({ level: 'warn', message: `Project validation warnings: ${result.errors.join(' | ')}` });
-        }
-
-        const project = result.project as any;
-        if (project?.name) {
-          openProject({ rootPath, project });
-        } else {
-          throw new Error('Validation did not return a project payload.');
-        }
-      } catch (e) {
-        pushConsole({ level: 'warn', message: `Open existing failed validation: ${e instanceof Error ? e.message : String(e)}` });
-        // Fallback: open a mock project to keep the studio interactive.
-        openProject({
-          rootPath,
-          project: {
-            name: 'Imported VYB Project',
-            version: '0.1.0',
-            engineVersion: '0.1.0',
-            createdAt: new Date().toISOString(),
-            modifiedAt: new Date().toISOString(),
-            targetPlatforms: ['windows', 'macos', 'linux'],
-            renderingMode: 'webgpu',
-            assetFolders: ['assets', 'scenes', 'scripts', 'materials', 'shaders', 'audio', 'ui'],
-            scenes: ['scenes/main.vybscene'],
-            plugins: [],
-            scriptingLanguages: ['typescript', 'javascript'],
-            importCompatibility: {},
-          },
-        });
-      }
-
-      const sceneData = createSampleScene();
-      setScene(sceneData.scene);
-      selectEntity(sceneData.cubeEntityId);
-      setNodeGraph(createSampleNodeGraph());
-      setAssetRegistry(assetRegistry.getAllAssets(), new Date().toISOString());
-      navigate('/studio');
+      const workspace = await bootstrapProjectAtPath(rootPath);
+      await enterStudio(workspace);
+    } catch (e) {
+      pushConsole({
+        level: 'error',
+        message: `Open project failed: ${e instanceof Error ? e.message : String(e)}`,
+      });
     } finally {
       setIsBusy(false);
     }
   }
 
-  async function handleOpenMockProject(rootPath: string, projectName: string) {
-    const sceneData = createSampleScene();
-    openProject({
-      rootPath,
-      project: {
-        name: projectName,
-        version: '0.1.0',
-        engineVersion: '0.1.0',
-        createdAt: new Date().toISOString(),
-        modifiedAt: new Date().toISOString(),
-        targetPlatforms: ['windows', 'macos', 'linux'],
-        renderingMode: 'webgpu',
-        assetFolders: ['assets', 'scenes', 'scripts', 'materials', 'shaders', 'audio', 'ui'],
-        scenes: ['scenes/main.vybscene'],
-        plugins: [],
-        scriptingLanguages: ['typescript', 'javascript'],
-        importCompatibility: {},
-      },
-    });
-
-    setScene(sceneData.scene);
-    selectEntity(sceneData.cubeEntityId);
-    setNodeGraph(createSampleNodeGraph());
-    setAssetRegistry(assetRegistry.getAllAssets(), new Date().toISOString());
-    navigate('/studio');
+  async function handleOpenRecent(entry: RecentEntry) {
+    setIsBusy(true);
+    try {
+      if (!isTauri() || entry.rootPath.startsWith('examples/')) {
+        const workspace = await bootstrapBundledSampleProject(entry.name);
+        await enterStudio(workspace);
+        return;
+      }
+      const workspace = await bootstrapProjectAtPath(entry.rootPath);
+      await enterStudio(workspace);
+    } catch (e) {
+      pushConsole({
+        level: 'error',
+        message: `Open recent failed: ${e instanceof Error ? e.message : String(e)}`,
+      });
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   return (
@@ -220,15 +147,16 @@ export function StartupScreen() {
               </div>
 
               <div className="text-sm text-vyb-text/70 leading-relaxed">
-                VYB is designed to become a premium, production-grade studio platform that fuses editor UX, renderer
-                abstraction, asset pipeline intelligence, and import/export compatibility.
+                Phase 1 adds real project I/O, filesystem asset indexing, scene persistence, and improved hierarchy/inspector
+                editing.
               </div>
 
               <div className="mt-4 rounded-lg border border-vyb-border/60 bg-black/10 p-3">
-                <div className="text-xs font-bold tracking-wide text-vyb-text/70 mb-1">Current status</div>
+                <div className="text-xs font-bold tracking-wide text-vyb-text/70 mb-1">Runtime</div>
                 <div className="text-[11px] text-vyb-text/55 leading-relaxed">
-                  This is an early scaffold. UI panels, project system models, import detection architecture, and typed
-                  ECS/scene scaffolding are in place. Real renderer backends and full import pipelines are planned.
+                  {isTauri()
+                    ? 'Desktop mode: filesystem project create/open, asset scan, and scene save are enabled.'
+                    : 'Web dev mode: bundled sample project is used. Run `npm run tauri:dev` for full filesystem integration.'}
                 </div>
               </div>
             </GlassPanel>
@@ -237,7 +165,7 @@ export function StartupScreen() {
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="text-xs font-bold tracking-wide text-vyb-text/80">Create a new project</div>
-                  <div className="text-[11px] text-vyb-text/55">File-system workspace supported.</div>
+                  <div className="text-[11px] text-vyb-text/55">Writes `.vyb/`, folders, and `scenes/main.vybscene`.</div>
                 </div>
               </div>
 
@@ -245,20 +173,15 @@ export function StartupScreen() {
                 <div className="text-[11px] text-vyb-text/55 font-semibold">Project name</div>
                 <TextField value={createName} onChange={(e) => setCreateName(e.target.value)} disabled={isBusy} />
 
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  disabled={isBusy || !createName.trim()}
-                  onClick={handleCreate}
-                >
-                  {isBusy ? 'Creating…' : 'Create Project'}
+                <Button variant="primary" className="w-full" disabled={isBusy || !createName.trim()} onClick={handleCreate}>
+                  {isBusy ? 'Working…' : isTauri() ? 'Create Project' : 'Open Sample Project'}
                 </Button>
 
                 <Button variant="ghost" className="w-full" disabled={isBusy} onClick={() => setSettingsOpen(true)}>
-                  Studio preferences (placeholder)
+                  Studio preferences
                 </Button>
                 <Button variant="secondary" className="w-full" disabled={isBusy} onClick={handleOpenExisting}>
-                  Open Existing Project
+                  {isTauri() ? 'Open Existing Project' : 'Open Bundled Sample'}
                 </Button>
               </div>
             </GlassPanel>
@@ -269,44 +192,26 @@ export function StartupScreen() {
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="text-xs font-bold tracking-wide text-vyb-text/80">Recent projects</div>
-                  <div className="text-[11px] text-vyb-text/55">Mock cache until backend reads real projects.</div>
+                  <div className="text-[11px] text-vyb-text/55">Stored locally in your browser.</div>
                 </div>
               </div>
 
               <div className="space-y-2 max-h-[420px] overflow-auto pr-1">
                 {recent.length === 0 ? (
-                  <div className="text-[11px] text-vyb-text/55">No recent projects yet. Create one on the left.</div>
+                  <div className="text-[11px] text-vyb-text/55">No recent projects yet.</div>
                 ) : (
                   recent.map((r) => (
                     <button
                       key={r.rootPath}
                       className="w-full text-left rounded-lg border border-vyb-border/40 bg-black/10 p-3 hover:bg-white/5"
-                      onClick={() => handleOpenMockProject(r.rootPath, r.name)}
+                      onClick={() => handleOpenRecent(r)}
                     >
                       <div className="text-xs font-bold text-vyb-text/85 truncate">{r.name}</div>
                       <div className="text-[11px] text-vyb-text/55 truncate">{r.rootPath}</div>
-                      <div className="text-[10px] text-vyb-text/40 mt-1">
-                        {new Date(r.at).toLocaleDateString()} • {new Date(r.at).toLocaleTimeString()}
-                      </div>
                     </button>
                   ))
                 )}
               </div>
-            </GlassPanel>
-
-            <GlassPanel className="p-4">
-              <div className="text-xs font-bold tracking-wide text-vyb-text/80 mb-2">Import compatibility (scaffold)</div>
-              <div className="text-[11px] text-vyb-text/55 leading-relaxed mb-3">
-                VYB currently detects likely Unity/Unreal/Godot/raw asset structures and generates honest migration
-                reports. Full translation pipelines are planned.
-              </div>
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={() => handleOpenMockProject('mock://local', 'Mock VYB Project')}
-              >
-                Create Mock Project
-              </Button>
             </GlassPanel>
           </div>
         </div>
@@ -314,4 +219,3 @@ export function StartupScreen() {
     </div>
   );
 }
-

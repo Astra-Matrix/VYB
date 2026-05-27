@@ -8,9 +8,13 @@ This roadmap is architecture-first. Each phase aims to produce stable interfaces
 - Import detection + report generation scaffold
 - ECS/scene editor scaffolding
 
-## Phase 1 — Project system + asset registry + basic scene editor
-- Typed asset index
-- Hierarchy + inspector UX improvements
+## Phase 1 — Project system + asset registry + basic scene editor (in progress)
+- Real project open/create via Tauri filesystem commands
+- Native asset folder scanning + project tree listing
+- Scene JSON load/save (`scenes/*.vybscene`)
+- Hierarchy: add/delete entities
+- Inspector: editable transform + entity rename
+- Asset browser + project explorer refresh
 
 ## Phase 2 — WebGPU viewport and renderer foundation
 - Real WebGPU renderer backend

@@ -106,6 +106,38 @@ export class EcsWorld {
     return this.getComponent(entityId, 'transform');
   }
 
+  renameEntity(entityId: EntityId, name: string): void {
+    const entity = this.entities.get(entityId);
+    if (!entity) return;
+    entity.name = name.trim() || entity.name;
+  }
+
+  removeEntity(entityId: EntityId): void {
+    const entity = this.entities.get(entityId);
+    if (!entity) return;
+
+    // Remove from parent children list.
+    if (entity.parentId) {
+      const parent = this.entities.get(entity.parentId);
+      parent?.children.splice(parent.children.indexOf(entityId), 1);
+    }
+
+    // Remove children recursively.
+    const children = [...entity.children];
+    for (const childId of children) {
+      this.removeEntity(childId);
+    }
+
+    this.entities.delete(entityId);
+    for (const map of Object.values(this.components) as Map<EntityId, unknown>[]) {
+      map.delete(entityId);
+    }
+  }
+
+  updateComponent<K extends ComponentName>(entityId: EntityId, name: K, component: ComponentMap[K]): void {
+    this.addComponent(entityId, name, component);
+  }
+
   snapshot(): EcsSnapshot {
     return { entities: this.getAllEntities() };
   }

@@ -1,4 +1,4 @@
-import { FileText, Layers, Settings, Sparkles, Zap } from 'lucide-react';
+import { FileText, Layers, Save, Settings, Sparkles, Zap } from 'lucide-react';
 import { IconButton } from '../../ui/components/IconButton';
 import { ModeSwitcher } from '../modes/ModeSwitcher';
 import { Button } from '../../ui/components/Button';
@@ -12,6 +12,8 @@ export function CommandBar() {
   const openProject = useAppState((s) => s.projectRootPath);
   const setImportReport = useAppState((s) => s.actions.setImportReport);
   const pushConsole = useAppState((s) => s.actions.pushConsole);
+  const scene = useAppState((s) => s.scene);
+  const activeSceneRelativePath = useAppState((s) => s.activeSceneRelativePath);
   const navigate = useNavigate();
 
   return (
@@ -37,6 +39,24 @@ export function CommandBar() {
         <IconButton aria-label="Settings" onClick={() => setSettingsOpen(true)} title="Settings">
           <Settings className="w-4 h-4" />
         </IconButton>
+        <Button
+          variant="secondary"
+          className="h-9"
+          disabled={!openProject || !scene || !activeSceneRelativePath}
+          onClick={async () => {
+            if (!openProject || !scene || !activeSceneRelativePath) return;
+            try {
+              const { saveActiveScene } = await import('../../app/workspace/saveScene');
+              await saveActiveScene(openProject, activeSceneRelativePath, scene);
+              pushConsole({ level: 'info', message: `Scene saved: ${activeSceneRelativePath}` });
+            } catch (e) {
+              pushConsole({ level: 'error', message: `Save scene failed: ${e instanceof Error ? e.message : String(e)}` });
+            }
+          }}
+        >
+          <Save className="w-4 h-4" />
+          Save
+        </Button>
         <Button
           variant="secondary"
           className="h-9"

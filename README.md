@@ -16,10 +16,10 @@ VYB’s architecture targets an experience that can eventually exceed Unreal Eng
 - and documentation/developer experience.
 
 ## Current status
-- Desktop shell scaffold: **Tauri + React + TypeScript** (premium UI panels, mode switcher, placeholder viewport).
-- Core studio architecture: typed project/import/asset/scene scaffolding.
-- Honest compatibility layer: import detection + readable report generator scaffold.
-- Renderer abstraction: placeholder viewport renderer with future-ready interfaces.
+- **Phase 0 complete:** studio shell, typed architecture, docs, tests, plugin manifests.
+- **Phase 1 (current):** real project I/O (Tauri), asset scanning, scene persistence, improved hierarchy/inspector.
+- Renderer abstraction: placeholder viewport (WebGPU planned Phase 2).
+- Import layer: detection + honest migration reports (full translation Phase 4).
 
 ## Setup
 1. Install dependencies:

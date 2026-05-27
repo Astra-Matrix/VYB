@@ -1,5 +1,64 @@
 {
-  "metadata": { "name": "Sample Scene", "version": "0.1.0" },
-  "entities": []
+  "metadata": {
+    "name": "Sample Scene",
+    "version": "0.1.0",
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  "activeCameraEntityId": "1",
+  "entities": [
+    {
+      "id": "1",
+      "name": "Camera",
+      "components": {
+        "transform": {
+          "position": { "x": 3, "y": 2, "z": 6 },
+          "rotation": { "xDeg": 0, "yDeg": 0, "zDeg": 0 },
+          "scale": { "x": 1, "y": 1, "z": 1 }
+        },
+        "camera": {
+          "projection": "perspective",
+          "fovDegrees": 60,
+          "near": 0.1,
+          "far": 500,
+          "orthographicWidth": 10,
+          "priority": 1
+        }
+      }
+    },
+    {
+      "id": "2",
+      "name": "Directional Light",
+      "components": {
+        "transform": {
+          "position": { "x": 0, "y": 3, "z": 0 },
+          "rotation": { "xDeg": 0, "yDeg": 0, "zDeg": 0 },
+          "scale": { "x": 1, "y": 1, "z": 1 }
+        },
+        "light": {
+          "lightType": "directional",
+          "color": { "x": 1, "y": 1, "z": 1 },
+          "intensity": 3,
+          "castShadows": true
+        }
+      }
+    },
+    {
+      "id": "3",
+      "name": "Cube",
+      "components": {
+        "transform": {
+          "position": { "x": 0, "y": 0.5, "z": 0 },
+          "rotation": { "xDeg": 0, "yDeg": 0, "zDeg": 0 },
+          "scale": { "x": 1, "y": 1, "z": 1 }
+        },
+        "meshRenderer": {
+          "meshId": "mesh:unit-cube.glb",
+          "materialIds": ["mat:default"],
+          "visible": true,
+          "castShadows": true,
+          "receiveShadows": true
+        }
+      }
+    }
+  ]
 }
-

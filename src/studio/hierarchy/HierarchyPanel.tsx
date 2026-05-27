@@ -20,15 +20,13 @@ function HierarchyRow({
   return (
     <button
       className={[
-        'w-full text-left px-2 py-1 rounded-lg text-xs',
-        selected ? 'bg-vyb-accent/20 border border-vyb-accent/40' : 'bg-transparent hover:bg-white/5',
+        'w-full text-left px-2 py-1 rounded-lg text-xs border',
+        selected ? 'bg-vyb-accent/20 border-vyb-accent/40' : 'bg-transparent border-transparent hover:bg-white/5',
       ].join(' ')}
       onClick={() => onSelect(entityId)}
       style={{ paddingLeft: 8 + depth * 14 }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-vyb-text/90 truncate">{name}</span>
-      </div>
+      <span className="text-vyb-text/90 truncate">{name}</span>
     </button>
   );
 }
@@ -37,6 +35,8 @@ export function HierarchyPanel() {
   const scene = useAppState((s) => s.scene);
   const selectedEntityId = useAppState((s) => s.selectedEntityId);
   const selectEntity = useAppState((s) => s.actions.selectEntity);
+  const addEmptyEntity = useAppState((s) => s.actions.addEmptyEntity);
+  const removeSelectedEntity = useAppState((s) => s.actions.removeSelectedEntity);
 
   const roots = useMemo(() => {
     if (!scene) return [] as EntityId[];
@@ -63,12 +63,23 @@ export function HierarchyPanel() {
 
   return (
     <GlassPanel className="p-2">
-      <div className="flex items-center justify-between mb-2 px-1">
+      <div className="flex items-center justify-between mb-2 px-1 gap-2">
         <div className="text-xs font-bold tracking-wide text-vyb-text/80">Hierarchy</div>
-        <button className="text-xs text-vyb-text/50 hover:text-vyb-text/80">+ Add</button>
+        <div className="flex gap-1">
+          <button className="text-[11px] text-vyb-text/50 hover:text-vyb-text/80" onClick={addEmptyEntity}>
+            + Add
+          </button>
+          <button
+            className="text-[11px] text-vyb-text/50 hover:text-vyb-danger disabled:opacity-30"
+            onClick={removeSelectedEntity}
+            disabled={!selectedEntityId}
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 max-h-[280px] overflow-auto">
         {scene ? (
           roots.length > 0 ? (
             roots.flatMap((r) => renderNode(r, 0))
@@ -82,4 +93,3 @@ export function HierarchyPanel() {
     </GlassPanel>
   );
 }
-

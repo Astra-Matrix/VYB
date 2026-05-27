@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { GlassPanel } from '../../ui/components/GlassPanel';
+import { Button } from '../../ui/components/Button';
 import { useAppState } from '../../app/state/useAppState';
 import type { AssetType } from '../../engine/assets/assetTypes';
+import { isTauri } from '../../app/platform/isTauri';
+import { bootstrapProjectAtPath } from '../../app/workspace/projectWorkspace';
 
 function typeLabel(t: AssetType) {
   switch (t) {
@@ -30,6 +34,9 @@ function typeLabel(t: AssetType) {
 
 export function AssetBrowserPanel() {
   const assets = useAppState((s) => s.assetRegistry.assets);
+  const projectRootPath = useAppState((s) => s.projectRootPath);
+  const applyWorkspace = useAppState((s) => s.actions.applyWorkspace);
+  const pushConsole = useAppState((s) => s.actions.pushConsole);
   const [typeFilter, setTypeFilter] = useState<AssetType | 'all'>('all');
 
   const filtered = useMemo(() => {
@@ -47,7 +54,25 @@ export function AssetBrowserPanel() {
     <GlassPanel className="p-2">
       <div className="flex items-center justify-between px-1 mb-2">
         <div className="text-xs font-bold tracking-wide text-vyb-text/80">Asset Browser</div>
-        <div className="text-[11px] text-vyb-text/40">{assets.length} indexed</div>
+        <div className="flex items-center gap-2">
+          <div className="text-[11px] text-vyb-text/40">{assets.length} indexed</div>
+          <Button
+            variant="ghost"
+            className="h-7 px-2"
+            onClick={async () => {
+              if (!projectRootPath || !isTauri()) return;
+              try {
+                const workspace = await bootstrapProjectAtPath(projectRootPath);
+                applyWorkspace(workspace);
+                pushConsole({ level: 'info', message: 'Asset index refreshed.' });
+              } catch (e) {
+                pushConsole({ level: 'error', message: `Asset refresh failed: ${e instanceof Error ? e.message : String(e)}` });
+              }
+            }}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 px-1 mb-2">

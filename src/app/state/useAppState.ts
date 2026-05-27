@@ -6,6 +6,9 @@ import type { ImportReport } from '../../engine/import';
 import type { HardwareCapabilities } from '../../engine/hardware/hardwareCapabilities';
 import type { NodeGraphModel } from '../../engine/visual-scripting';
 import type { BuildPlatformTarget } from '../../engine/build';
+import type { ProjectTreeEntryDto } from '../commands/tauriCommands';
+import type { TransformComponent } from '../../engine/components';
+import type { WorkspaceBootstrapResult } from '../workspace/projectWorkspace';
 
 export interface StudioConsoleEntry {
   id: string;
@@ -15,22 +18,19 @@ export interface StudioConsoleEntry {
 }
 
 export interface AppState {
-  // Project workspace
   projectRootPath?: string;
   currentProject?: VybProject;
+  activeSceneRelativePath?: string;
 
-  // Editor scene state
   scene: VybScene | null;
   selectedEntityId?: string;
 
-  // Assets
   assetRegistry: { assets: AssetMetadata[]; scannedAt?: string };
+  projectTree: ProjectTreeEntryDto[];
 
-  // Import
   importReport?: ImportReport;
   importLastSourcePath?: string;
 
-  // UI / modes
   activeMode:
     | 'Design'
     | 'Code'
@@ -42,17 +42,13 @@ export interface AppState {
     | 'AI';
   isSettingsOpen: boolean;
 
-  // Console
   consoleEntries: StudioConsoleEntry[];
 
-  // Hardware probe
   hardwareCapabilities?: HardwareCapabilities;
   hardwareLastProbedAt?: string;
 
-  // Visual scripting
   nodeGraph?: NodeGraphModel;
 
-  // Build page
   selectedBuildTarget?: BuildPlatformTarget;
   selectedBuildConfig: 'debug' | 'release';
   buildOutputFolder?: string;
@@ -62,12 +58,19 @@ export interface AppState {
     setSettingsOpen: (open: boolean) => void;
     setActiveMode: (mode: AppState['activeMode']) => void;
 
+    applyWorkspace: (workspace: WorkspaceBootstrapResult) => void;
     openProject: (payload: { rootPath: string; project: VybProject }) => void;
     closeProject: () => void;
     setScene: (scene: VybScene) => void;
     selectEntity: (entityId?: string) => void;
 
     setAssetRegistry: (assets: AssetMetadata[], scannedAt?: string) => void;
+    setProjectTree: (entries: ProjectTreeEntryDto[]) => void;
+
+    renameSelectedEntity: (name: string) => void;
+    addEmptyEntity: () => void;
+    removeSelectedEntity: () => void;
+    updateSelectedTransform: (partial: Partial<TransformComponent>) => void;
 
     setImportReport: (report: ImportReport | undefined, sourcePath?: string) => void;
 
@@ -93,9 +96,11 @@ function uid(): string {
 export const useAppState = create<AppState>()((set, get) => ({
   projectRootPath: undefined,
   currentProject: undefined,
+  activeSceneRelativePath: undefined,
   scene: null,
   selectedEntityId: undefined,
   assetRegistry: { assets: [] },
+  projectTree: [],
   importReport: undefined,
   importLastSourcePath: undefined,
 
@@ -116,16 +121,30 @@ export const useAppState = create<AppState>()((set, get) => ({
     setSettingsOpen: (open) => set({ isSettingsOpen: open }),
     setActiveMode: (mode) => set({ activeMode: mode }),
 
+    applyWorkspace: (workspace) =>
+      set({
+        projectRootPath: workspace.rootPath,
+        currentProject: workspace.project,
+        activeSceneRelativePath: workspace.defaultSceneRelativePath,
+        scene: workspace.scene,
+        selectedEntityId: workspace.selectEntityId,
+        assetRegistry: { assets: workspace.assets, scannedAt: workspace.assetsScannedAt },
+        projectTree: workspace.projectTree,
+      }),
+
     openProject: ({ rootPath, project }) =>
       set({
         projectRootPath: rootPath,
         currentProject: project,
       }),
+
     closeProject: () =>
       set({
         projectRootPath: undefined,
         currentProject: undefined,
+        activeSceneRelativePath: undefined,
         assetRegistry: { assets: [] },
+        projectTree: [],
         importReport: undefined,
         importLastSourcePath: undefined,
         scene: null,
@@ -135,10 +154,48 @@ export const useAppState = create<AppState>()((set, get) => ({
         hardwareCapabilities: undefined,
         hardwareLastProbedAt: undefined,
       }),
+
     setScene: (scene) => set({ scene }),
     selectEntity: (entityId) => set({ selectedEntityId: entityId }),
 
     setAssetRegistry: (assets, scannedAt) => set({ assetRegistry: { assets, scannedAt } }),
+    setProjectTree: (entries) => set({ projectTree: entries }),
+
+    renameSelectedEntity: (name) => {
+      const { scene, selectedEntityId } = get();
+      if (!scene || !selectedEntityId) return;
+      scene.world.renameEntity(selectedEntityId, name);
+      set({ scene });
+    },
+
+    addEmptyEntity: () => {
+      const { scene } = get();
+      if (!scene) return;
+      const id = scene.world.createEntity('Empty');
+      scene.world.addComponent(id, 'transform', {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { xDeg: 0, yDeg: 0, zDeg: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+      });
+      set({ scene, selectedEntityId: id });
+    },
+
+    removeSelectedEntity: () => {
+      const { scene, selectedEntityId } = get();
+      if (!scene || !selectedEntityId) return;
+      scene.world.removeEntity(selectedEntityId);
+      set({ scene, selectedEntityId: undefined });
+    },
+
+    updateSelectedTransform: (partial) => {
+      const { scene, selectedEntityId } = get();
+      if (!scene || !selectedEntityId) return;
+      const current = scene.world.getTransform(selectedEntityId);
+      if (!current) return;
+      scene.world.updateComponent(selectedEntityId, 'transform', { ...current, ...partial });
+      set({ scene });
+    },
+
     setImportReport: (report, sourcePath) => set({ importReport: report, importLastSourcePath: sourcePath }),
 
     pushConsole: (entry) => {
@@ -161,4 +218,3 @@ export const useAppState = create<AppState>()((set, get) => ({
     clearBuildLogs: () => set({ buildLogs: [] }),
   },
 }));
-
