@@ -1,0 +1,12 @@
+{
+  "renderer": {
+    "backend": "webgpu",
+    "maxTextureSize": 8192,
+    "msaa": 4,
+    "vsync": true
+  },
+  "physics": { "enabled": true, "gravity": [0, -9.81, 0] },
+  "audio": { "masterVolume": 1, "sampleRate": 48000 },
+  "networking": { "enabled": false, "maxPlayers": 16 }
+}
+

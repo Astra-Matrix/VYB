@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# Tauri
+src-tauri/target/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Test
+coverage/
+
+# VYB local
+.vyb/cache/

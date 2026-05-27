@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "0.1.0",
+  "pluginId": "webgpu-renderer-preview",
+  "name": "WebGPU Renderer Preview",
+  "version": "0.1.0",
+  "author": "VYB",
+  "entrypoint": {
+    "editor": "index.ts",
+    "renderer": "renderer.ts"
+  },
+  "permissions": ["renderer.gpu", "editor.panels", "asset.processors"],
+  "extensionPoints": {
+    "renderer.backends": ["webgpu"],
+    "asset.processors": ["shader-wgsl-preprocessor"],
+    "editor.panels": ["WebGPU Preview"]
+  }
+}
+

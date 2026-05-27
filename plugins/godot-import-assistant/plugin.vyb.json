@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.1.0",
+  "pluginId": "godot-import-assistant",
+  "name": "Godot Import Assistant",
+  "version": "0.1.0",
+  "author": "VYB",
+  "entrypoint": {
+    "editor": "index.ts"
+  },
+  "permissions": ["import.handlers", "editor.panels", "editor.commands"],
+  "extensionPoints": {
+    "importer.handlers": ["godot"],
+    "editor.panels": ["Godot Import Report"],
+    "editor.commands": ["vyb.import.godot.report"]
+  },
+  "importHandlers": {
+    "sourceTypes": ["godot"],
+    "notes": ["Scaffold plugin: node hierarchy + migration notes only."]
+  }
+}
+

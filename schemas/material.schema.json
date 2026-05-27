@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VYB Material (vybmat)",
+  "type": "object",
+  "required": ["name", "version", "shaderId"],
+  "properties": {
+    "name": { "type": "string" },
+    "version": { "type": "string" },
+    "shaderId": { "type": "string" },
+    "parameters": { "type": "object", "additionalProperties": true }
+  },
+  "additionalProperties": true
+}
+

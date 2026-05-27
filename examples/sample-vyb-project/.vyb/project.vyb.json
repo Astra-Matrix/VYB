@@ -1,0 +1,17 @@
+{
+  "name": "Sample VYB Project",
+  "version": "0.1.0",
+  "engineVersion": "0.1.0",
+  "description": "Example VYB-native project for import/testing.",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "modifiedAt": "2026-01-01T00:00:00.000Z",
+  "targetPlatforms": ["windows", "macos", "linux"],
+  "renderingMode": "webgpu",
+  "assetFolders": ["assets", "scenes", "scripts", "materials", "shaders", "audio", "ui"],
+  "scenes": ["scenes/main.vybscene"],
+  "plugins": ["webgpu-renderer-preview"],
+  "scriptingLanguages": ["typescript", "javascript"],
+  "defaultScene": "scenes/main.vybscene",
+  "importCompatibility": {}
+}
+

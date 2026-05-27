@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VYB Scene (vybscene)",
+  "type": "object",
+  "required": ["metadata", "entities"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "components"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "parentId": { "type": "string" },
+          "components": { "type": "object" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
+

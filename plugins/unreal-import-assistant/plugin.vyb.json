@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.1.0",
+  "pluginId": "unreal-import-assistant",
+  "name": "Unreal Import Assistant",
+  "version": "0.1.0",
+  "author": "VYB",
+  "entrypoint": {
+    "editor": "index.ts"
+  },
+  "permissions": ["import.handlers", "editor.panels", "editor.commands"],
+  "extensionPoints": {
+    "importer.handlers": ["unreal"],
+    "editor.panels": ["Unreal Import Report"],
+    "editor.commands": ["vyb.import.unreal.report"]
+  },
+  "importHandlers": {
+    "sourceTypes": ["unreal"],
+    "notes": ["Scaffold plugin: migration notes only (no auto-translation yet)."]
+  }
+}
+

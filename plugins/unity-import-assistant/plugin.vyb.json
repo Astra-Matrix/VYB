@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.1.0",
+  "pluginId": "unity-import-assistant",
+  "name": "Unity Import Assistant",
+  "version": "0.1.0",
+  "author": "VYB",
+  "entrypoint": {
+    "editor": "index.ts"
+  },
+  "permissions": ["import.handlers", "editor.panels", "editor.commands"],
+  "extensionPoints": {
+    "importer.handlers": ["unity"],
+    "editor.panels": ["Unity Import Report"],
+    "editor.commands": ["vyb.import.unity.report"]
+  },
+  "importHandlers": {
+    "sourceTypes": ["unity"],
+    "notes": ["Scaffold plugin: detection + migration notes only (no auto-translation yet)."]
+  }
+}
+

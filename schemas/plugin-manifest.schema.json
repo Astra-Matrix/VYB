@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VYB Plugin Manifest (plugin.vyb.json)",
+  "type": "object",
+  "required": ["schemaVersion", "pluginId", "name", "version", "author", "entrypoint", "permissions"],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "pluginId": { "type": "string" },
+    "name": { "type": "string" },
+    "version": { "type": "string" },
+    "author": { "type": "string" },
+    "entrypoint": {
+      "type": "object",
+      "required": ["editor"],
+      "properties": {
+        "editor": { "type": "string" },
+        "renderer": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "uiContributions": { "type": "object" },
+    "extensionPoints": { "type": "object" },
+    "importHandlers": { "type": "object" },
+    "assetProcessors": { "type": "object" }
+  },
+  "additionalProperties": true
+}
+

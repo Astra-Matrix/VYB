@@ -1,0 +1,16 @@
+[package]
+name = "vyb-studio"
+version = "0.1.0"
+description = "VYB Studio desktop shell"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+tauri = { version = "2", features = ["devtools"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+

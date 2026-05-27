@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "0.1.0",
+  "pluginId": "ai-design-assistant",
+  "name": "AI Design Assistant",
+  "version": "0.1.0",
+  "author": "VYB",
+  "entrypoint": {
+    "editor": "index.ts"
+  },
+  "permissions": ["ai.tools", "editor.panels", "editor.commands"],
+  "extensionPoints": {
+    "ai.tools": ["vyb.ai.design.assistant"],
+    "editor.panels": ["AI Design Assistant"]
+  }
+}
+

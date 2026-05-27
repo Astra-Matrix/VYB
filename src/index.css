@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Premium editor feel: improve focus ring visibility on dark backgrounds. */
+:focus-visible {
+  outline: 2px solid rgba(91, 141, 239, 0.6);
+  outline-offset: 2px;
+}
+
