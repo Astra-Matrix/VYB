@@ -1,5 +1,6 @@
 #![allow(clippy::needless_return)]
 
+mod build_io;
 mod filesystem;
 mod import_io;
 mod scene_io;
@@ -348,6 +349,49 @@ fn copy_import_asset(input: CopyImportAssetInput) -> Result<(), String> {
   )
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ListBuildSourceInput {
+  project_root: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WriteBuildArtifactInput {
+  output_root: String,
+  relative_path: String,
+  content: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CopyBuildArtifactInput {
+  project_root: String,
+  source_relative: String,
+  output_root: String,
+  target_relative: String,
+}
+
+#[tauri::command]
+fn list_build_source_files(input: ListBuildSourceInput) -> Result<build_io::ListBuildFilesResult, String> {
+  build_io::list_build_source_files(&input.project_root)
+}
+
+#[tauri::command]
+fn write_build_artifact(input: WriteBuildArtifactInput) -> Result<(), String> {
+  build_io::write_build_artifact(&input.output_root, &input.relative_path, &input.content)
+}
+
+#[tauri::command]
+fn copy_build_artifact(input: CopyBuildArtifactInput) -> Result<(), String> {
+  build_io::copy_build_artifact(
+    &input.project_root,
+    &input.source_relative,
+    &input.output_root,
+    &input.target_relative,
+  )
+}
+
 #[tauri::command]
 fn probe_hardware_capabilities() -> Result<serde_json::Value, String> {
   Ok(serde_json::json!({
@@ -386,6 +430,9 @@ fn main() {
       read_import_source_text,
       write_project_text_file,
       copy_import_asset,
+      list_build_source_files,
+      write_build_artifact,
+      copy_build_artifact,
       probe_hardware_capabilities,
       read_doc_markdown
     ])

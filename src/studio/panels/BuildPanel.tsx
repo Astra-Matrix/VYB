@@ -1,37 +1,90 @@
-import { BUILD_TARGETS } from '../../engine/build';
+import { Hammer, Loader2, Trash2 } from 'lucide-react';
+import { BUILD_TARGETS, resolveDefaultBuildOutput } from '../../engine/build';
 import { useAppState } from '../../app/state/useAppState';
-import { GlassPanel } from '../../ui/components/GlassPanel';
+import { runBuildPipeline } from '../../app/build/runBuildPipeline';
+import { StudioPanel } from '../../ui/components/StudioPanel';
 import { Button } from '../../ui/components/Button';
+import { TextField } from '../../ui/components/TextField';
+import { StatusLight } from '../../ui/components/StatusLight';
+import { isTauri } from '../../app/platform/isTauri';
 
 export function BuildPanel() {
+  const project = useAppState((s) => s.currentProject);
+  const projectRoot = useAppState((s) => s.projectRootPath);
+  const projectTree = useAppState((s) => s.projectTree);
   const selectedTarget = useAppState((s) => s.selectedBuildTarget);
   const selectedConfig = useAppState((s) => s.selectedBuildConfig);
   const outputFolder = useAppState((s) => s.buildOutputFolder);
   const buildLogs = useAppState((s) => s.buildLogs);
+  const buildInProgress = useAppState((s) => s.buildInProgress);
 
   const setBuildTarget = useAppState((s) => s.actions.setBuildTarget);
   const setBuildConfig = useAppState((s) => s.actions.setBuildConfig);
   const setBuildOutputFolder = useAppState((s) => s.actions.setBuildOutputFolder);
+  const pushBuildLog = useAppState((s) => s.actions.pushBuildLog);
+  const clearBuildLogs = useAppState((s) => s.actions.clearBuildLogs);
+  const setBuildInProgress = useAppState((s) => s.actions.setBuildInProgress);
+
+  const targetDesc = BUILD_TARGETS.find((t) => t.id === selectedTarget);
+  const defaultOutput =
+    projectRoot && selectedTarget
+      ? resolveDefaultBuildOutput(projectRoot, selectedTarget, selectedConfig)
+      : '';
+
+  async function handleBuild() {
+    if (!project || !projectRoot || !selectedTarget) return;
+    clearBuildLogs();
+    setBuildInProgress(true);
+    pushBuildLog({ level: 'info', message: `Starting ${selectedConfig} build for ${targetDesc?.displayName ?? selectedTarget}…` });
+
+    try {
+      const knownProjectFiles = projectTree.filter((e) => !e.isDirectory).map((e) => e.relativePath);
+      const result = await runBuildPipeline({
+        projectRoot,
+        project,
+        target: selectedTarget,
+        configuration: selectedConfig,
+        outputFolder: outputFolder || defaultOutput,
+        knownProjectFiles,
+        onLog: (level, message) => pushBuildLog({ level, message }),
+      });
+
+      if (result.manifestJson && !isTauri()) {
+        pushBuildLog({ level: 'info', message: 'Manifest preview available in build report (desktop required for export).' });
+      }
+    } catch (e) {
+      pushBuildLog({
+        level: 'error',
+        message: `Build failed: ${e instanceof Error ? e.message : String(e)}`,
+      });
+    } finally {
+      setBuildInProgress(false);
+    }
+  }
 
   return (
-    <GlassPanel className="p-2 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-2 px-1">
-        <div>
-          <div className="text-xs font-bold tracking-wide text-vyb-text/80">Build</div>
-          <div className="text-[11px] text-vyb-text/55">Scaffold build pipeline interface.</div>
-        </div>
-      </div>
+    <StudioPanel
+      title="Build & Deploy"
+      icon={<Hammer className="w-4 h-4" />}
+      className="h-full"
+      active={buildInProgress}
+      noPadding
+    >
+      <div className="flex flex-col h-full overflow-hidden p-3 gap-3">
+        <p className="text-[11px] text-vyb-muted leading-relaxed">
+          Stage project artifacts, emit build manifests, and prepare target-specific runtime stubs.
+          {!isTauri() ? ' Web mode runs preview builds only.' : null}
+        </p>
 
-      <div className="space-y-3 overflow-auto px-1">
         <div>
-          <div className="text-[11px] font-bold tracking-wide text-vyb-text/70 mb-1">Target</div>
+          <label className="text-[10px] font-bold text-vyb-muted uppercase tracking-wide">Target</label>
           <select
-            className="w-full rounded-lg border border-vyb-border/60 bg-black/20 text-xs px-2 py-1"
+            className="vyb-input mt-1 w-full text-xs"
             value={selectedTarget ?? ''}
-            onChange={(e) => setBuildTarget((e.target.value || undefined) as any)}
+            onChange={(e) => setBuildTarget((e.target.value || undefined) as typeof selectedTarget)}
           >
             <option value="" disabled>
-              Select a target
+              Select deployment target
             </option>
             {BUILD_TARGETS.map((t) => (
               <option key={t.id} value={t.id}>
@@ -42,72 +95,94 @@ export function BuildPanel() {
         </div>
 
         <div>
-          <div className="text-[11px] font-bold tracking-wide text-vyb-text/70 mb-1">Configuration</div>
-          <div className="flex gap-2">
-            <Button variant={selectedConfig === 'debug' ? 'primary' : 'ghost'} className="flex-1" onClick={() => setBuildConfig('debug')}>
+          <label className="text-[10px] font-bold text-vyb-muted uppercase tracking-wide">Configuration</label>
+          <div className="flex gap-2 mt-1">
+            <Button
+              variant={selectedConfig === 'debug' ? 'primary' : 'secondary'}
+              size="sm"
+              className="flex-1"
+              onClick={() => setBuildConfig('debug')}
+            >
               Debug
             </Button>
-            <Button variant={selectedConfig === 'release' ? 'primary' : 'ghost'} className="flex-1" onClick={() => setBuildConfig('release')}>
+            <Button
+              variant={selectedConfig === 'release' ? 'primary' : 'secondary'}
+              size="sm"
+              className="flex-1"
+              onClick={() => setBuildConfig('release')}
+            >
               Release
             </Button>
           </div>
         </div>
 
         <div>
-          <div className="text-[11px] font-bold tracking-wide text-vyb-text/70 mb-1">Output folder</div>
-          <input
-            className="w-full rounded-lg border border-vyb-border/60 bg-black/20 text-xs px-2 py-2 text-vyb-text"
-            value={outputFolder ?? ''}
+          <label className="text-[10px] font-bold text-vyb-muted uppercase tracking-wide">Output folder</label>
+          <TextField
+            className="mt-1 text-xs font-mono"
+            value={outputFolder ?? defaultOutput}
             onChange={(e) => setBuildOutputFolder(e.target.value)}
-            placeholder="(placeholder)"
+            placeholder={defaultOutput || 'project/builds/…'}
+            disabled={!projectRoot}
           />
         </div>
 
-        <div className="rounded-lg border border-vyb-border/60 bg-black/10 p-2">
-          <div className="text-[11px] font-bold tracking-wide text-vyb-text/70 mb-2">Platform capability matrix</div>
-          <div className="text-[11px] text-vyb-text/55">
-            {selectedTarget ? (
-              <>
-                {BUILD_TARGETS.find((t) => t.id === selectedTarget)?.displayName}
-                <div className="mt-2 space-y-1">
-                  {Object.entries(BUILD_TARGETS.find((t) => t.id === selectedTarget)!.capabilities).map(([k, v]) => (
-                    <div key={k} className="flex items-center justify-between">
-                      <span className="capitalize text-vyb-text/55">{k.replace(/([A-Z])/g, ' $1')}</span>
-                      <span className={v ? 'text-vyb-success' : 'text-vyb-text/35'}>{v ? 'Yes' : 'No'}</span>
-                    </div>
-                  ))}
+        {targetDesc ? (
+          <div className="rounded-md border border-vyb-line/60 bg-vyb-charcoal/50 p-2">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-vyb-text-secondary mb-2 flex items-center gap-2">
+              <StatusLight variant="plasma" pulse={buildInProgress} />
+              Capability matrix
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-[10px]">
+              {Object.entries(targetDesc.capabilities).map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-2">
+                  <span className="text-vyb-muted capitalize">{k}</span>
+                  <span className={v ? 'text-vyb-green' : 'text-vyb-muted/50'}>{v ? 'on' : 'off'}</span>
                 </div>
-              </>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="flex gap-2">
+          <Button
+            className="flex-1"
+            variant="primary"
+            disabled={!project || !projectRoot || !selectedTarget || buildInProgress}
+            onClick={() => void handleBuild()}
+          >
+            {buildInProgress ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />}
+            {buildInProgress ? 'Building…' : isTauri() ? 'Build project' : 'Preview build'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={clearBuildLogs} title="Clear logs">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-vyb-muted mb-1">Build log</div>
+          <div className="flex-1 overflow-auto rounded-md border border-vyb-line/50 bg-vyb-charcoal/60 p-2 font-mono text-[10px]">
+            {buildLogs.length === 0 ? (
+              <span className="text-vyb-muted">No build output yet.</span>
             ) : (
-              'Select a target to view capabilities.'
+              buildLogs.slice(-50).map((l) => (
+                <div
+                  key={l.id}
+                  className={
+                    l.level === 'error'
+                      ? 'text-vyb-danger'
+                      : l.level === 'warn'
+                        ? 'text-vyb-amber'
+                        : 'text-vyb-text-secondary'
+                  }
+                >
+                  [{new Date(l.at).toLocaleTimeString()}] {l.message}
+                </div>
+              ))
             )}
           </div>
         </div>
-
-        <Button
-          className="w-full"
-          variant="secondary"
-          onClick={() => {
-            // Placeholder build trigger.
-          }}
-          disabled={!selectedTarget}
-        >
-          Build (placeholder)
-        </Button>
-
-        <div>
-          <div className="text-[11px] font-bold tracking-wide text-vyb-text/70 mb-1">Build logs</div>
-          <div className="max-h-[220px] overflow-auto rounded-lg border border-vyb-border/60 bg-black/10 p-2">
-            {buildLogs.length === 0 ? <div className="text-[11px] text-vyb-text/45">No build logs yet.</div> : null}
-            {buildLogs.slice(-30).map((l) => (
-              <div key={l.id} className="font-mono text-[11px] text-vyb-text/70">
-                [{new Date(l.at).toLocaleTimeString()}] {l.level.toUpperCase()}: {l.message}
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
-    </GlassPanel>
+    </StudioPanel>
   );
 }
-

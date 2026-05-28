@@ -1,14 +1,32 @@
-# 11_BUILD_SYSTEM — Build Targets (Scaffold)
+# 11_BUILD_SYSTEM — Build Targets
 
-VYB includes a build system architecture that unifies deployment targets.
+VYB unifies deployment targets behind a single **BuildPipeline**.
 
-## Current scaffold
-- Typed build target descriptors.
-- Studio Build panel UI scaffold.
-- A capability matrix placeholder per target.
+## Outputs
 
-## Planned path
-- Orchestrated build pipeline.
-- Output artifacts and dependency tracking.
-- CI-friendly builds and deployment integration.
+Each build writes to `{projectRoot}/builds/{target}/{configuration}/` (or a custom output folder):
 
+| Artifact | Purpose |
+|----------|---------|
+| `build-manifest.json` | Project metadata, staged file list, capability flags |
+| `build-report.json` | Summary, warnings, file counts |
+| `project/` | Staged copy of scenes, assets, scripts, materials, shaders, audio, ui, `.vyb` config |
+| `runtime/README.md` | Target-specific deployment notes |
+| `runtime/launch.config.json` | Runtime entry scaffold |
+
+## Studio usage
+
+1. Switch to **Build** mode.
+2. Select target (Web, Windows, Linux, Dedicated Server, …).
+3. Choose **Debug** or **Release**.
+4. Click **Build project** (desktop) or **Preview build** (web).
+
+## CI
+
+GitHub Actions runs `npm run lint`, `npm test`, and `npm run build`, uploading the Vite `dist/` folder as a web artifact.
+
+## Planned
+
+- Scripted bundling per target (Tauri player, WASM runtime).
+- Dependency graph and incremental builds.
+- Signed desktop installers.
