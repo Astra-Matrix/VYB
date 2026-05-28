@@ -121,8 +121,20 @@ export function createSampleScene(): SampleSceneData {
   scene.world.addComponent(lightEntityId, 'transform', transform(v3(0, 3, 0), defaultRot, v3(1, 1, 1), emptyEntityId));
   scene.world.addComponent(lightEntityId, 'light', light);
 
-  scene.world.addComponent(cubeEntityId, 'transform', transform(v3(0, 0.5, 0), defaultRot, v3(1, 1, 1), emptyEntityId));
+  scene.world.addComponent(cubeEntityId, 'transform', transform(v3(0, 2, 0), defaultRot, v3(1, 1, 1), emptyEntityId));
   scene.world.addComponent(cubeEntityId, 'meshRenderer', cubeMeshRenderer);
+  scene.world.addComponent(cubeEntityId, 'rigidbody', {
+    enabled: true,
+    mass: 1,
+    useGravity: true,
+    velocity: { x: 0, y: 0, z: 0 },
+    angularVelocity: { x: 0, y: 0, z: 0 },
+  });
+  scene.world.addComponent(cubeEntityId, 'collider', {
+    shape: 'box',
+    size: { x: 1, y: 1, z: 1 },
+    enabled: true,
+  });
 
   scene.world.addComponent(planeEntityId, 'transform', transform(v3(0, 0, 0), defaultRot, v3(6, 1, 6)));
   scene.world.addComponent(planeEntityId, 'meshRenderer', planeMeshRenderer);

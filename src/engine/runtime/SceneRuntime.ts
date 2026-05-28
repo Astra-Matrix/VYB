@@ -4,12 +4,22 @@ import { RuntimeClock } from './RuntimeClock';
 import type { RuntimeSystem, RuntimeSystemContext } from './RuntimeSystem';
 import { ScriptSystem } from './systems/ScriptSystem';
 import { VisualScriptSystem } from './systems/VisualScriptSystem';
+import { PhysicsSystem } from './systems/PhysicsSystem';
+import { AnimationSystem } from './systems/AnimationSystem';
+import { AudioSystem } from './systems/AudioSystem';
+import { UISystem } from './systems/UISystem';
+import { NetworkSystem } from './systems/NetworkSystem';
 import type { NodeGraphModel } from '../visual-scripting/NodeGraphModel';
 import type { RuntimePlaybackState, RuntimeStats, RuntimeTickInfo } from './types';
 
 export interface SceneRuntimeOptions {
   behaviorGraph?: NodeGraphModel | null;
   targetEntityId?: string;
+  enablePhysics?: boolean;
+  enableAnimation?: boolean;
+  enableAudio?: boolean;
+  enableUI?: boolean;
+  enableNetwork?: boolean;
 }
 
 export interface SceneRuntimeHooks {
@@ -22,6 +32,12 @@ export class SceneRuntime {
   private readonly clock = new RuntimeClock();
   private readonly systems: RuntimeSystem[];
   private readonly scriptSystem: ScriptSystem;
+  private readonly physicsSystem = new PhysicsSystem();
+  private readonly animationSystem = new AnimationSystem();
+  private readonly audioSystem = new AudioSystem();
+  private readonly uiSystem = new UISystem();
+  private readonly networkSystem = new NetworkSystem();
+  private readonly options: SceneRuntimeOptions;
   private playback: RuntimePlaybackState = 'stopped';
   private lastError?: string;
   private systemsRan = 0;
@@ -32,6 +48,7 @@ export class SceneRuntime {
     private readonly hooks: SceneRuntimeHooks = {},
     options: SceneRuntimeOptions = {},
   ) {
+    this.options = options;
     this.scriptSystem = new ScriptSystem(registry);
     const systems: RuntimeSystem[] = [this.scriptSystem];
     if (options.behaviorGraph) {
@@ -42,6 +59,11 @@ export class SceneRuntime {
         ),
       );
     }
+    if (options.enablePhysics) systems.push(this.physicsSystem);
+    if (options.enableAnimation) systems.push(this.animationSystem);
+    if (options.enableAudio) systems.push(this.audioSystem);
+    if (options.enableUI) systems.push(this.uiSystem);
+    if (options.enableNetwork) systems.push(this.networkSystem);
     this.systems = systems;
   }
 
@@ -57,6 +79,11 @@ export class SceneRuntime {
       elapsed: this.clock.getElapsed(),
       scriptsActive: this.scriptSystem.scriptsActive,
       systemsRan: this.systemsRan,
+      physicsBodies: this.options.enablePhysics ? this.physicsSystem.lastStats.bodiesSimulated : undefined,
+      animationClips: this.options.enableAnimation ? this.animationSystem.activeClips : undefined,
+      audioSources: this.options.enableAudio ? this.audioSystem.lastStats.activeSources : undefined,
+      uiWidgets: this.options.enableUI ? this.uiSystem.widgetCount : undefined,
+      networkPeers: this.options.enableNetwork ? this.networkSystem.lastStats.connectedPeers : undefined,
       lastError: this.lastError,
     };
   }

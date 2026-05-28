@@ -1,15 +1,37 @@
 import { FileText, Layers, Pause, Play, Save, Settings, Sparkles, Square, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { IconButton } from '../../ui/components/IconButton';
 import { ModeSwitcher } from '../modes/ModeSwitcher';
 import { Button } from '../../ui/components/Button';
+import { Badge } from '../../ui/components/Badge';
 import { useAppState } from '../../app/state/useAppState';
 import { useNavigate } from 'react-router-dom';
 import { chooseDirectory, detectImportCompatibility } from '../../app/commands/tauriCommands';
 import { planner, reportBuilder } from '../../engine/import';
+import type { DetectedProject, ImportDetectionResult, ImportSourceType } from '../../engine/import/ImportDetector';
+
+const IMPORT_SOURCE_TYPES: ImportSourceType[] = ['vyb', 'unity', 'unreal', 'godot', 'raw', 'unknown'];
+
+function coerceDetection(report: unknown): ImportDetectionResult {
+  const raw = report as { detected?: Partial<DetectedProject>[]; scannedAt?: string };
+  const detected: DetectedProject[] = (raw.detected ?? []).map((d) => ({
+    type: IMPORT_SOURCE_TYPES.includes(d.type as ImportSourceType) ? (d.type as ImportSourceType) : 'unknown',
+    confidence: d.confidence ?? 0,
+    rootPath: d.rootPath ?? '',
+    markers: d.markers ?? [],
+    metadata: d.metadata,
+  }));
+  return {
+    detected,
+    primary: detected[0],
+    scannedAt: raw.scannedAt ?? new Date().toISOString(),
+  };
+}
 
 export function CommandBar() {
   const setSettingsOpen = useAppState((s) => s.actions.setSettingsOpen);
-  const openProject = useAppState((s) => s.projectRootPath);
+  const project = useAppState((s) => s.currentProject);
+  const projectRoot = useAppState((s) => s.projectRootPath);
   const setImportReport = useAppState((s) => s.actions.setImportReport);
   const pushConsole = useAppState((s) => s.actions.pushConsole);
   const scene = useAppState((s) => s.scene);
@@ -21,61 +43,65 @@ export function CommandBar() {
   const navigate = useNavigate();
 
   return (
-    <div className="h-14 flex items-center justify-between px-4 border-b border-vyb-border/60 bg-vyb-panel/40 backdrop-blur-panel">
+    <header className="vyb-toolbar justify-between">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-b from-vyb-accent/35 to-transparent border border-vyb-accent/40 flex items-center justify-center">
-          <Zap className="w-4 h-4 text-vyb-accent" />
-        </div>
+        <motion.div
+          className="h-9 w-9 rounded-md border border-vyb-plasma/50 bg-vyb-graphite shadow-rim-plasma"
+          whileHover={{ scale: 1.03 }}
+          transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="h-full w-full flex items-center justify-center">
+            <Zap className="w-4 h-4 text-vyb-plasma" />
+          </div>
+        </motion.div>
         <div className="min-w-0">
-          <div className="text-sm font-bold tracking-wide text-vyb-text">VYB Studio</div>
-          <div className="text-xs text-vyb-text/60 truncate">{openProject ? openProject : 'No project opened'}</div>
+          <div className="flex items-center gap-2">
+            <span className="font-display font-bold text-sm tracking-wide text-vyb-text">VYB Studio</span>
+            <Badge variant="plasma">Command Center</Badge>
+          </div>
+          <div className="text-[11px] text-vyb-muted truncate max-w-[280px]">
+            {project ? `${project.name} • ${projectRoot}` : 'No project opened'}
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <ModeSwitcher />
-        <IconButton aria-label="AI" onClick={() => {}} title="AI tools placeholder">
-          <Sparkles className="w-4 h-4" />
+      <ModeSwitcher />
+
+      <div className="flex items-center gap-2">
+        <IconButton aria-label="AI" onClick={() => {}} title="AI tools">
+          <Sparkles className="w-4 h-4 text-vyb-magenta" />
         </IconButton>
-        <IconButton aria-label="Docs" onClick={() => navigate('/docs/01_VISION')} title="Open vision docs">
+        <IconButton aria-label="Docs" onClick={() => navigate('/docs/01_VISION')} title="Documentation">
           <FileText className="w-4 h-4" />
         </IconButton>
         <IconButton aria-label="Settings" onClick={() => setSettingsOpen(true)} title="Settings">
           <Settings className="w-4 h-4" />
         </IconButton>
-        <Button variant="secondary" className="h-9" disabled={!scene} onClick={() => void playRuntime()} title="Play runtime">
+
+        <div className="w-px h-6 bg-gradient-to-b from-transparent via-vyb-plasma/40 to-transparent mx-1" />
+
+        <Button variant="ghost" size="sm" disabled={!scene} onClick={() => void playRuntime()} title="Play">
           <Play className="w-4 h-4" />
         </Button>
-        <Button
-          variant="secondary"
-          className="h-9"
-          disabled={runtimePlayback !== 'playing'}
-          onClick={() => pauseRuntime()}
-          title="Pause runtime"
-        >
+        <Button variant="ghost" size="sm" disabled={runtimePlayback !== 'playing'} onClick={() => pauseRuntime()} title="Pause">
           <Pause className="w-4 h-4" />
         </Button>
-        <Button
-          variant="secondary"
-          className="h-9"
-          disabled={runtimePlayback === 'stopped'}
-          onClick={() => void stopRuntime()}
-          title="Stop runtime"
-        >
+        <Button variant="ghost" size="sm" disabled={runtimePlayback === 'stopped'} onClick={() => void stopRuntime()} title="Stop">
           <Square className="w-4 h-4" />
         </Button>
+
         <Button
           variant="secondary"
-          className="h-9"
-          disabled={!openProject || !scene || !activeSceneRelativePath}
+          size="sm"
+          disabled={!projectRoot || !scene || !activeSceneRelativePath}
           onClick={async () => {
-            if (!openProject || !scene || !activeSceneRelativePath) return;
+            if (!projectRoot || !scene || !activeSceneRelativePath) return;
             try {
               const { saveActiveScene } = await import('../../app/workspace/saveScene');
-              await saveActiveScene(openProject, activeSceneRelativePath, scene);
+              await saveActiveScene(projectRoot, activeSceneRelativePath, scene);
               pushConsole({ level: 'info', message: `Scene saved: ${activeSceneRelativePath}` });
             } catch (e) {
-              pushConsole({ level: 'error', message: `Save scene failed: ${e instanceof Error ? e.message : String(e)}` });
+              pushConsole({ level: 'error', message: `Save failed: ${e instanceof Error ? e.message : String(e)}` });
             }
           }}
         >
@@ -83,33 +109,20 @@ export function CommandBar() {
           Save
         </Button>
         <Button
-          variant="secondary"
-          className="h-9"
+          variant="primary"
+          size="sm"
           onClick={() => {
-            (async () => {
+            void (async () => {
               try {
-                const selected = await chooseDirectory(openProject);
+                const selected = await chooseDirectory(projectRoot);
                 if (!selected) return;
-
-                pushConsole({ level: 'info', message: `Running import compatibility detection for ${selected}` });
+                pushConsole({ level: 'info', message: `Import detection: ${selected}` });
                 const result = await detectImportCompatibility(selected);
-
-                const reportValue = result.report as any;
-                const detected = (reportValue?.detected ?? []) as any[];
-                const scannedAt = (reportValue?.scannedAt as string | undefined) ?? new Date().toISOString();
-
-                const detection = {
-                  detected,
-                  primary: detected[0],
-                  scannedAt,
-                };
+                const detection = coerceDetection(result.report);
                 const plan = detection.primary ? planner.createPlan(detection.primary) : undefined;
-                const built = reportBuilder.build(selected, detection, plan);
-
-                setImportReport(built, selected);
-                pushConsole({ level: 'info', message: 'Import report generated.' });
+                setImportReport(reportBuilder.build(selected, detection, plan), selected);
               } catch (e) {
-                pushConsole({ level: 'error', message: `Import detection failed: ${e instanceof Error ? e.message : String(e)}` });
+                pushConsole({ level: 'error', message: `Import failed: ${e instanceof Error ? e.message : String(e)}` });
               }
             })();
           }}
@@ -118,7 +131,6 @@ export function CommandBar() {
           Import
         </Button>
       </div>
-    </div>
+    </header>
   );
 }
-

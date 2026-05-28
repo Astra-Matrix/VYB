@@ -14,5 +14,10 @@ export interface RuntimeStats {
   elapsed: number;
   scriptsActive: number;
   systemsRan: number;
+  physicsBodies?: number;
+  animationClips?: number;
+  audioSources?: number;
+  uiWidgets?: number;
+  networkPeers?: number;
   lastError?: string;
 }

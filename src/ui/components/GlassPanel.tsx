@@ -1,15 +1,17 @@
 import type { ReactNode } from 'react';
+import clsx from 'clsx';
 
+/** Hero / launcher surfaces — metallic glass with HUD-friendly depth. */
 export function GlassPanel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={[
-        'rounded-xl border border-vyb-border/60 bg-vyb-panel/60 shadow-glass backdrop-blur-panel',
+      className={clsx(
+        'rounded-lg border border-vyb-line/70 bg-vyb-gunmetal/80 shadow-glass backdrop-blur-panel',
+        'bg-panel-sheen vyb-surface-energize',
         className,
-      ].join(' ')}
+      )}
     >
       {children}
     </div>
   );
 }
-

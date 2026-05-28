@@ -52,11 +52,19 @@ export interface AppState {
   nodeGraph?: NodeGraphModel;
   shaderGraph?: NodeGraphModel;
   runBehaviorGraphOnPlay: boolean;
+  runtimeSubsystems: {
+    physics: boolean;
+    animation: boolean;
+    audio: boolean;
+    ui: boolean;
+    network: boolean;
+  };
 
   selectedBuildTarget?: BuildPlatformTarget;
   selectedBuildConfig: 'debug' | 'release';
   buildOutputFolder?: string;
   buildLogs: StudioConsoleEntry[];
+  buildInProgress: boolean;
 
   viewportBackend: 'webgpu' | 'placeholder' | null;
 
@@ -91,12 +99,14 @@ export interface AppState {
     setNodeGraph: (graph: NodeGraphModel) => void;
     setShaderGraph: (graph: NodeGraphModel) => void;
     setRunBehaviorGraphOnPlay: (enabled: boolean) => void;
+    setRuntimeSubsystem: (key: keyof AppState['runtimeSubsystems'], enabled: boolean) => void;
 
     setBuildTarget: (target: BuildPlatformTarget | undefined) => void;
     setBuildConfig: (config: 'debug' | 'release') => void;
     setBuildOutputFolder: (folder?: string) => void;
     pushBuildLog: (entry: Omit<StudioConsoleEntry, 'id' | 'at'>) => void;
     clearBuildLogs: () => void;
+    setBuildInProgress: (inProgress: boolean) => void;
 
     setViewportBackend: (backend: AppState['viewportBackend']) => void;
 
@@ -143,11 +153,19 @@ export const useAppState = create<AppState>()((set, get) => ({
   selectedBuildConfig: 'debug',
   buildOutputFolder: undefined,
   buildLogs: [],
+  buildInProgress: false,
   viewportBackend: null,
   runtimePlayback: 'stopped',
   runtimeStats: null,
   shaderGraph: undefined,
   runBehaviorGraphOnPlay: true,
+  runtimeSubsystems: {
+    physics: true,
+    animation: true,
+    audio: true,
+    ui: true,
+    network: false,
+  },
 
   actions: {
     setSettingsOpen: (open) => set({ isSettingsOpen: open }),
@@ -258,15 +276,24 @@ export const useAppState = create<AppState>()((set, get) => ({
       set({ buildLogs: [...get().buildLogs, e] });
     },
     clearBuildLogs: () => set({ buildLogs: [] }),
+    setBuildInProgress: (inProgress) => set({ buildInProgress: inProgress }),
 
     setViewportBackend: (backend) => set({ viewportBackend: backend }),
 
+    setRuntimeSubsystem: (key, enabled) =>
+      set({ runtimeSubsystems: { ...get().runtimeSubsystems, [key]: enabled } }),
+
     playRuntime: async () => {
-      const { scene, actions, nodeGraph, runBehaviorGraphOnPlay, selectedEntityId } = get();
+      const { scene, actions, nodeGraph, runBehaviorGraphOnPlay, selectedEntityId, runtimeSubsystems } = get();
       if (!scene) return;
       setRuntimeGraphOptions({
         behaviorGraph: runBehaviorGraphOnPlay ? nodeGraph : null,
         targetEntityId: selectedEntityId,
+        enablePhysics: runtimeSubsystems.physics,
+        enableAnimation: runtimeSubsystems.animation,
+        enableAudio: runtimeSubsystems.audio,
+        enableUI: runtimeSubsystems.ui,
+        enableNetwork: runtimeSubsystems.network,
       });
       const runtime = bindSceneRuntime(scene, {
         onLog: (level, message) => actions.pushConsole({ level, message }),

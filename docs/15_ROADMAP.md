@@ -39,11 +39,17 @@ This roadmap is architecture-first. Each phase aims to produce stable interfaces
 - Behavior graph executor integrated with Play runtime
 - Shader graph compiler (WGSL fragment scaffold)
 
-## Phase 6 — Physics, animation, audio, UI, networking
-- Runtime subsystems and editor integration
+## Phase 6 — Physics, animation, audio, UI, networking (complete)
+- PhysicsWorld gravity + ground collision
+- AnimationDirector, AudioEngine, UIRuntime, NetworkSession scaffolds
+- Runtime systems integrated with Play; Systems panel in Audio/Network modes
+- Vibrant Blizzard × UE5 UI refresh (Framer Motion, resizable panels)
 
-## Phase 7 — Build pipeline and deployment targets
-- CI-friendly builds and artifacts
+## Phase 7 — Build pipeline and deployment targets (complete)
+- BuildPipeline: validate, stage project files, emit build-manifest + launch stubs
+- Tauri build_io commands (list/copy/write artifacts)
+- Build panel wired to pipeline; preview mode on web, full export on desktop
+- GitHub Actions CI: lint, test, web dist artifact
 
 ## Phase 8 — AI-assisted workflows
 - AI task models + provider wiring

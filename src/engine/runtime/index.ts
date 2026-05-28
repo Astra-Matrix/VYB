@@ -4,3 +4,8 @@ export * from './RuntimeSystem';
 export * from './SceneRuntime';
 export * from './systems/ScriptSystem';
 export * from './systems/VisualScriptSystem';
+export * from './systems/PhysicsSystem';
+export * from './systems/AnimationSystem';
+export * from './systems/AudioSystem';
+export * from './systems/UISystem';
+export * from './systems/NetworkSystem';

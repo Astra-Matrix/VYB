@@ -2,19 +2,359 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  height: 100%;
+@layer base {
+  :root {
+    /* Foundation */
+    --vyb-bg-black: 5 6 8;
+    --vyb-bg-charcoal: 10 12 16;
+    --vyb-bg-graphite: 15 18 24;
+    --vyb-bg-gunmetal: 22 27 36;
+    --vyb-surface-metal: 18 22 31;
+    --vyb-surface-elevated: 26 32 44;
+    --vyb-border-subtle: 34 42 56;
+    --vyb-border-strong: 58 70 88;
+
+    /* Plasma accent */
+    --vyb-orange-plasma: 255 107 26;
+    --vyb-orange-ember: 255 133 51;
+    --vyb-orange-hot: 255 154 61;
+    --vyb-amber-core: 255 179 71;
+    --vyb-red-glint: 232 58 42;
+
+    /* Signal accents */
+    --vyb-cyan-signal: 0 200 224;
+    --vyb-blue-signal: 61 139 255;
+    --vyb-violet-signal: 155 109 255;
+    --vyb-magenta-signal: 232 93 255;
+    --vyb-green-signal: 61 214 140;
+
+    /* Text */
+    --vyb-text-primary: 240 242 248;
+    --vyb-text-secondary: 184 192 212;
+    --vyb-text-muted: 123 132 156;
+
+    /* Motion */
+    --vyb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --vyb-ease-snap: cubic-bezier(0.34, 1.2, 0.64, 1);
+    --vyb-duration-fast: 120ms;
+    --vyb-duration: 200ms;
+    --vyb-duration-slow: 320ms;
+
+    /* Legacy */
+    --vyb-accent: var(--vyb-orange-plasma);
+    --vyb-warm: var(--vyb-amber-core);
+    --vyb-epic: var(--vyb-cyan-signal);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+    @apply bg-vyb-bg text-vyb-text antialiased font-sans;
+    background-color: rgb(var(--vyb-bg-black));
+    background-image:
+      radial-gradient(ellipse 100% 70% at 50% -30%, rgba(255, 107, 26, 0.06), transparent 55%),
+      radial-gradient(ellipse 40% 30% at 90% 10%, rgba(0, 200, 224, 0.04), transparent 50%);
+  }
+
+  ::selection {
+    background: rgba(255, 107, 26, 0.35);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 26, 0.35);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 107, 26, 0.55);
+  }
 }
 
-body {
-  margin: 0;
-  overflow: hidden;
-}
+@layer components {
+  .vyb-transition {
+    transition-property: all;
+    transition-duration: var(--vyb-duration);
+    transition-timing-function: var(--vyb-ease);
+  }
 
-/* Premium editor feel: improve focus ring visibility on dark backgrounds. */
-:focus-visible {
-  outline: 2px solid rgba(91, 141, 239, 0.6);
-  outline-offset: 2px;
-}
+  .vyb-transition-fast {
+    transition-property: all;
+    transition-duration: var(--vyb-duration-fast);
+    transition-timing-function: var(--vyb-ease);
+  }
 
+  /* Focus */
+  .vyb-focus-ring:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px rgb(var(--vyb-bg-graphite)),
+      0 0 0 4px rgba(255, 107, 26, 0.65),
+      0 0 16px rgba(255, 107, 26, 0.25);
+  }
+
+  .vyb-text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      105deg,
+      rgb(var(--vyb-orange-plasma)) 0%,
+      rgb(var(--vyb-amber-core)) 50%,
+      rgb(var(--vyb-orange-ember)) 100%
+    );
+  }
+
+  /* Panels — machine-built modules */
+  .vyb-panel {
+    @apply rounded-lg border border-vyb-line/80 bg-vyb-panel/95 shadow-panel;
+    background-image: linear-gradient(
+      165deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.2) 100%
+    );
+  }
+
+  .vyb-panel-chrome {
+    @apply h-9 shrink-0 flex items-center justify-between gap-2 px-3 border-b border-vyb-line/70;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  }
+
+  .vyb-panel-chrome-title {
+    @apply text-[10px] font-bold tracking-[0.14em] uppercase text-vyb-text/90 truncate;
+  }
+
+  .vyb-card-hover {
+    @apply vyb-transition;
+  }
+
+  .vyb-card-hover:hover {
+    @apply border-vyb-plasma/40 shadow-lift-hover;
+    transform: translateY(-1px);
+  }
+
+  /* Buttons — tactile hardware controls */
+  .vyb-btn {
+    @apply vyb-focus-ring inline-flex items-center justify-center gap-2 font-semibold;
+    @apply rounded-md border vyb-transition;
+    @apply disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:transform-none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vyb-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.12) 50%, transparent 60%);
+    transition: opacity var(--vyb-duration) var(--vyb-ease);
+    pointer-events: none;
+  }
+
+  .vyb-btn:hover:not(:disabled)::before {
+    opacity: 1;
+  }
+
+  .vyb-btn-primary {
+    @apply vyb-btn text-vyb-bg border-vyb-ember/60 bg-btn-plasma shadow-glow;
+    box-shadow:
+      0 0 20px rgba(255, 107, 26, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  .vyb-btn-primary:hover:not(:disabled) {
+    @apply border-vyb-hot shadow-rim-plasma;
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 28px rgba(255, 107, 26, 0.5),
+      0 0 0 1px rgba(255, 107, 26, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .vyb-btn-primary:active:not(:disabled) {
+    transform: translateY(1px) scale(0.99);
+    box-shadow:
+      0 0 12px rgba(255, 107, 26, 0.3),
+      inset 0 2px 4px rgba(0, 0, 0, 0.35);
+  }
+
+  .vyb-btn-secondary {
+    @apply vyb-btn text-vyb-text border-vyb-line-strong/60 bg-btn-metal text-sm;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .vyb-btn-secondary:hover:not(:disabled) {
+    @apply border-vyb-plasma/50;
+    box-shadow:
+      0 0 16px rgba(255, 107, 26, 0.15),
+      inset 0 0 0 1px rgba(255, 107, 26, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .vyb-btn-ghost {
+    @apply vyb-btn text-vyb-text-secondary border-transparent bg-transparent;
+  }
+
+  .vyb-btn-ghost:hover:not(:disabled) {
+    @apply text-vyb-text border-vyb-line/80 bg-white/[0.04];
+    box-shadow: 0 0 12px rgba(255, 107, 26, 0.08);
+  }
+
+  .vyb-btn-signal {
+    @apply vyb-btn text-vyb-bg border-vyb-cyan/40;
+    background: linear-gradient(180deg, rgba(0, 200, 224, 0.9) 0%, rgba(0, 160, 180, 0.95) 100%);
+    box-shadow: 0 0 20px rgba(0, 200, 224, 0.25);
+  }
+
+  .vyb-btn-danger {
+    @apply vyb-btn text-vyb-danger border-vyb-danger/40 bg-vyb-danger/10;
+  }
+
+  .vyb-btn-danger:hover:not(:disabled) {
+    @apply bg-vyb-danger/20 border-vyb-danger/60;
+    box-shadow: 0 0 16px rgba(255, 77, 77, 0.2);
+  }
+
+  .vyb-btn-sm {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+
+  .vyb-btn-md {
+    @apply px-3.5 py-2 text-sm;
+  }
+
+  .vyb-btn-lg {
+    @apply px-5 py-2.5 text-sm;
+  }
+
+  /* Inputs */
+  .vyb-input {
+    @apply w-full rounded-md border border-vyb-line/80 bg-vyb-charcoal/90 px-3 py-2 text-sm text-vyb-text;
+    @apply placeholder:text-vyb-muted vyb-transition;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+  }
+
+  .vyb-input:focus {
+    @apply outline-none border-vyb-plasma/60;
+    box-shadow:
+      inset 0 2px 4px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(255, 107, 26, 0.35),
+      0 0 16px rgba(255, 107, 26, 0.12);
+  }
+
+  /* Tabs */
+  .vyb-tab {
+    @apply relative px-2.5 py-1.5 rounded-md text-[11px] font-semibold whitespace-nowrap vyb-focus-ring;
+    @apply text-vyb-muted vyb-transition-fast;
+  }
+
+  .vyb-tab-active {
+    @apply text-vyb-text;
+    background: linear-gradient(180deg, rgba(255, 107, 26, 0.2) 0%, rgba(255, 107, 26, 0.06) 100%);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 107, 26, 0.45),
+      0 0 12px rgba(255, 107, 26, 0.15);
+  }
+
+  /* Status lights */
+  .vyb-status-light {
+    @apply w-2 h-2 rounded-full shrink-0;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  .vyb-status-cyan {
+    @apply bg-vyb-cyan text-vyb-cyan;
+  }
+
+  .vyb-status-green {
+    @apply bg-vyb-green text-vyb-green;
+  }
+
+  .vyb-status-plasma {
+    @apply bg-vyb-plasma text-vyb-plasma;
+  }
+
+  .vyb-status-magenta {
+    @apply bg-vyb-magenta text-vyb-magenta;
+  }
+
+  /* Viewport overlay */
+  .vyb-viewport-overlay {
+    @apply rounded-lg border border-vyb-line/70 bg-vyb-graphite/85 backdrop-blur-panel shadow-panel;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
+  }
+
+  .vyb-viewport-stat {
+    @apply text-[10px] font-mono text-vyb-text-secondary tabular-nums;
+  }
+
+  .vyb-viewport-toggle {
+    @apply px-2 py-1 rounded-md text-xs font-semibold border vyb-transition-fast vyb-focus-ring;
+    @apply bg-vyb-charcoal/80 border-vyb-line/70 text-vyb-text-secondary;
+  }
+
+  .vyb-viewport-toggle-active {
+    @apply text-vyb-text border-vyb-plasma/50;
+    background: linear-gradient(180deg, rgba(255, 107, 26, 0.18) 0%, rgba(255, 107, 26, 0.06) 100%);
+    box-shadow: 0 0 12px rgba(255, 107, 26, 0.2);
+  }
+
+  /* Toolbar */
+  .vyb-toolbar {
+    @apply h-14 shrink-0 flex items-center gap-3 px-4 border-b border-vyb-line/80;
+    background: linear-gradient(180deg, rgba(30, 36, 48, 0.95) 0%, rgba(18, 22, 31, 0.98) 100%);
+    box-shadow: 0 1px 0 rgba(255, 107, 26, 0.08);
+  }
+
+  /* Red glint sweep on hover (panels / premium surfaces) */
+  .vyb-surface-energize {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vyb-surface-energize::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(232, 58, 42, 0.8), transparent);
+    opacity: 0;
+    transition: opacity var(--vyb-duration) var(--vyb-ease);
+  }
+
+  .vyb-surface-energize:hover::after {
+    animation: red-glint-sweep 2s ease-in-out;
+    opacity: 1;
+  }
+
+  /* Axis RGB (viewport / gizmos) */
+  .vyb-axis-x {
+    color: rgb(var(--vyb-red-glint));
+  }
+
+  .vyb-axis-y {
+    color: rgb(var(--vyb-green-signal));
+  }
+
+  .vyb-axis-z {
+    color: rgb(var(--vyb-blue-signal));
+  }
+}

@@ -5,20 +5,25 @@ export function Button({
   className,
   children,
   variant = 'primary',
+  size = 'md',
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'signal' | 'warm' | 'epic';
+  size?: 'sm' | 'md' | 'lg';
   children: ReactNode;
 }) {
   return (
     <button
       className={clsx(
-        'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition',
-        'disabled:opacity-40 disabled:cursor-not-allowed',
-        variant === 'primary' && 'bg-vyb-accent text-vyb-bg hover:bg-vyb-accentDim',
-        variant === 'secondary' && 'bg-vyb-elevated text-vyb-text hover:bg-[#2a3142]',
-        variant === 'ghost' && 'bg-transparent text-vyb-text/90 hover:bg-white/5',
-        variant === 'danger' && 'bg-vyb-danger/20 text-vyb-danger hover:bg-vyb-danger/30',
+        variant === 'primary' && 'vyb-btn-primary',
+        variant === 'secondary' && 'vyb-btn-secondary',
+        variant === 'ghost' && 'vyb-btn-ghost',
+        variant === 'danger' && 'vyb-btn-danger',
+        variant === 'signal' && 'vyb-btn-signal',
+        (variant === 'warm' || variant === 'epic') && 'vyb-btn-primary',
+        size === 'sm' && 'vyb-btn-sm',
+        size === 'md' && 'vyb-btn-md',
+        size === 'lg' && 'vyb-btn-lg',
         className,
       )}
       {...rest}
@@ -27,4 +32,3 @@ export function Button({
     </button>
   );
 }
-

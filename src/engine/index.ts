@@ -12,4 +12,9 @@ export * from './build';
 export * from './hardware';
 export * from './scripting';
 export * from './runtime';
+export * from './physics';
+export * from './animation';
+export * from './audio';
+export * from './ui-runtime';
+export * from './networking';
 

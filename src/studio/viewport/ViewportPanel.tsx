@@ -18,10 +18,10 @@ function Toggle({
   onChange: (next: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-2 text-xs text-vyb-text/70 select-none">
+    <label className="flex items-center gap-2 text-xs text-vyb-text-secondary select-none">
       <input
         type="checkbox"
-        className="h-4 w-4 rounded border border-vyb-border/70 bg-black/20"
+        className="h-3.5 w-3.5 rounded-sm border border-vyb-line/80 bg-vyb-charcoal accent-vyb-plasma"
         checked={value}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -161,12 +161,15 @@ export function ViewportPanel() {
 
       <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-3 pointer-events-none">
         <div className="pointer-events-auto">
-          <div className="rounded-xl border border-vyb-border/60 bg-vyb-panel/60 backdrop-blur-panel shadow-glass p-3">
-            <div className="text-xs font-bold tracking-wide text-vyb-text/80 mb-2">Viewport Controls</div>
+          <div className="vyb-viewport-overlay p-3 min-w-[220px]">
+            <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-vyb-text-secondary mb-2 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-vyb-plasma shadow-[0_0_8px_rgba(255,107,26,0.8)]" />
+              Viewport
+            </div>
             <div className="space-y-2">
               <div className="flex gap-1 flex-wrap">
                 <button
-                  className="px-2 py-1 rounded-lg text-xs font-semibold border bg-vyb-accent/20 border-vyb-accent/40 flex items-center gap-1"
+                  className="vyb-viewport-toggle vyb-viewport-toggle-active flex items-center gap-1"
                   disabled={!scene}
                   onClick={() => void playRuntime()}
                   title="Play"
@@ -174,7 +177,7 @@ export function ViewportPanel() {
                   <Play className="w-3 h-3" /> Play
                 </button>
                 <button
-                  className="px-2 py-1 rounded-lg text-xs font-semibold border bg-black/10 border-vyb-border/60 flex items-center gap-1"
+                  className="vyb-viewport-toggle flex items-center gap-1"
                   disabled={runtimePlayback !== 'playing'}
                   onClick={() => pauseRuntime()}
                   title="Pause"
@@ -182,7 +185,7 @@ export function ViewportPanel() {
                   <Pause className="w-3 h-3" /> Pause
                 </button>
                 <button
-                  className="px-2 py-1 rounded-lg text-xs font-semibold border bg-black/10 border-vyb-border/60 flex items-center gap-1"
+                  className="vyb-viewport-toggle flex items-center gap-1"
                   disabled={runtimePlayback === 'stopped'}
                   onClick={() => void stopRuntime()}
                   title="Stop"
@@ -190,7 +193,7 @@ export function ViewportPanel() {
                   <Square className="w-3 h-3" /> Stop
                 </button>
                 <button
-                  className="px-2 py-1 rounded-lg text-xs font-semibold border bg-black/10 border-vyb-border/60 flex items-center gap-1"
+                  className="vyb-viewport-toggle flex items-center gap-1"
                   disabled={runtimePlayback !== 'paused'}
                   onClick={() => void stepRuntime()}
                   title="Step one fixed tick"
@@ -198,25 +201,29 @@ export function ViewportPanel() {
                   <StepForward className="w-3 h-3" /> Step
                 </button>
               </div>
-              <div className="text-[10px] font-mono text-vyb-text/55">
-                Runtime: {runtimePlayback}
+              <div className="vyb-viewport-stat">
+                Runtime: <span className="text-vyb-plasma">{runtimePlayback}</span>
                 {runtimeStats ? ` • tick ${runtimeStats.tick} • scripts ${runtimeStats.scriptsActive}` : ''}
               </div>
               <div className="flex gap-2">
                 <button
                   className={[
-                    'px-2 py-1 rounded-lg text-xs font-semibold border',
-                    cameraMode === 'perspective' ? 'bg-vyb-accent/20 border-vyb-accent/40' : 'bg-black/10 border-vyb-border/60',
-                  ].join(' ')}
+                    'vyb-viewport-toggle',
+                    cameraMode === 'perspective' && 'vyb-viewport-toggle-active',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   onClick={() => setCameraMode('perspective')}
                 >
                   Perspective
                 </button>
                 <button
                   className={[
-                    'px-2 py-1 rounded-lg text-xs font-semibold border',
-                    cameraMode === 'orthographic' ? 'bg-vyb-accent/20 border-vyb-accent/40' : 'bg-black/10 border-vyb-border/60',
-                  ].join(' ')}
+                    'vyb-viewport-toggle',
+                    cameraMode === 'orthographic' && 'vyb-viewport-toggle-active',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   onClick={() => setCameraMode('orthographic')}
                 >
                   Ortho
@@ -224,9 +231,9 @@ export function ViewportPanel() {
               </div>
               <Toggle label="Grid" value={gridEnabled} onChange={setGridEnabled} />
               <div className="flex gap-2 items-center">
-                <div className="text-xs text-vyb-text/70 w-20">Lighting</div>
+                <div className="text-xs text-vyb-text-secondary w-20">Lighting</div>
                 <select
-                  className="flex-1 rounded-lg border border-vyb-border/60 bg-black/20 text-xs px-2 py-1"
+                  className="vyb-input flex-1 !py-1 text-xs"
                   value={lightingMode}
                   onChange={(e) => setLightingMode(e.target.value as LightingMode)}
                 >
@@ -236,9 +243,9 @@ export function ViewportPanel() {
                 </select>
               </div>
               <div className="flex gap-2 items-center">
-                <div className="text-xs text-vyb-text/70 w-20">Preview</div>
+                <div className="text-xs text-vyb-text-secondary w-20">Preview</div>
                 <select
-                  className="flex-1 rounded-lg border border-vyb-border/60 bg-black/20 text-xs px-2 py-1"
+                  className="vyb-input flex-1 !py-1 text-xs"
                   value={previewMode}
                   onChange={(e) => setPreviewMode(e.target.value as PreviewMode)}
                 >
@@ -247,27 +254,34 @@ export function ViewportPanel() {
                   <option value="material-preview">Material</option>
                 </select>
               </div>
-              <div className="text-[11px] text-vyb-text/55 leading-relaxed">
-                Press Play to run ECS script ticks (Cube rotates via scripts/player.ts). WebGPU viewport falls back to
-                canvas when unavailable.
+              <div className="text-[10px] text-vyb-muted leading-relaxed border-t border-vyb-line/50 pt-2 mt-1">
+                <span className="vyb-axis-x">X</span>
+                <span className="mx-1 text-vyb-muted">·</span>
+                <span className="vyb-axis-y">Y</span>
+                <span className="mx-1 text-vyb-muted">·</span>
+                <span className="vyb-axis-z">Z</span>
+                <span className="ml-2">— Play runs ECS + scripts. WebGPU falls back to canvas.</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="pointer-events-auto">
-          <div className="rounded-xl border border-vyb-border/60 bg-vyb-panel/60 backdrop-blur-panel shadow-glass p-3 text-right min-w-[140px]">
-            <div className="text-xs font-bold text-vyb-text/80">Mode</div>
-            <div className="text-sm font-semibold text-vyb-text">{activeMode}</div>
-            <div className="text-[11px] text-vyb-text/55 mt-1">Backend: {backendLabel}</div>
+          <div className="vyb-viewport-overlay p-3 text-right min-w-[148px]">
+            <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-vyb-muted">Diagnostics</div>
+            <div className="text-sm font-semibold text-vyb-plasma mt-0.5">{activeMode}</div>
+            <div className="vyb-viewport-stat mt-1">
+              Backend: <span className="text-vyb-cyan">{backendLabel}</span>
+            </div>
             {frameStats ? (
-              <div className="text-[11px] text-vyb-text/70 mt-2 font-mono">
-                {frameStats.fps} fps • {frameStats.frameMs.toFixed(1)} ms
-                <br />
-                {frameStats.drawCalls} draw calls
+              <div className="vyb-viewport-stat mt-2 space-y-0.5">
+                <div>
+                  <span className="text-vyb-green">{frameStats.fps}</span> fps · {frameStats.frameMs.toFixed(1)} ms
+                </div>
+                <div>{frameStats.drawCalls} draw calls</div>
               </div>
             ) : (
-              <div className="text-[11px] text-vyb-text/45 mt-2">Initializing renderer…</div>
+              <div className="vyb-viewport-stat mt-2 animate-pulse-soft">Initializing renderer…</div>
             )}
           </div>
         </div>
