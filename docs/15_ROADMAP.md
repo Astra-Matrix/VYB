@@ -34,8 +34,10 @@ This roadmap is architecture-first. Each phase aims to produce stable interfaces
 - `.vybmat` material translation stubs + import.map.json tracking
 - Import preview (web) and full import (Tauri copy/write)
 
-## Phase 5 — Visual scripting and shader graph
-- Node editor UX + execution/data graph system
+## Phase 5 — Visual scripting and shader graph (complete)
+- Interactive node canvas (pan/zoom, drag, wire pins)
+- Behavior graph executor integrated with Play runtime
+- Shader graph compiler (WGSL fragment scaffold)
 
 ## Phase 6 — Physics, animation, audio, UI, networking
 - Runtime subsystems and editor integration

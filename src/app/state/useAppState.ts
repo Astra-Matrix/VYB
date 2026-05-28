@@ -10,7 +10,7 @@ import type { ProjectTreeEntryDto } from '../commands/tauriCommands';
 import type { TransformComponent } from '../../engine/components';
 import type { WorkspaceBootstrapResult } from '../workspace/projectWorkspace';
 import type { RuntimePlaybackState, RuntimeStats } from '../../engine/runtime/types';
-import { bindSceneRuntime, getSceneRuntime, stopSceneRuntime } from '../runtime/sceneRuntimeController';
+import { bindSceneRuntime, getSceneRuntime, setRuntimeGraphOptions, stopSceneRuntime } from '../runtime/sceneRuntimeController';
 
 export interface StudioConsoleEntry {
   id: string;
@@ -50,6 +50,8 @@ export interface AppState {
   hardwareLastProbedAt?: string;
 
   nodeGraph?: NodeGraphModel;
+  shaderGraph?: NodeGraphModel;
+  runBehaviorGraphOnPlay: boolean;
 
   selectedBuildTarget?: BuildPlatformTarget;
   selectedBuildConfig: 'debug' | 'release';
@@ -87,6 +89,8 @@ export interface AppState {
     setHardwareCapabilities: (cap: HardwareCapabilities, at: string) => void;
 
     setNodeGraph: (graph: NodeGraphModel) => void;
+    setShaderGraph: (graph: NodeGraphModel) => void;
+    setRunBehaviorGraphOnPlay: (enabled: boolean) => void;
 
     setBuildTarget: (target: BuildPlatformTarget | undefined) => void;
     setBuildConfig: (config: 'debug' | 'release') => void;
@@ -142,6 +146,8 @@ export const useAppState = create<AppState>()((set, get) => ({
   viewportBackend: null,
   runtimePlayback: 'stopped',
   runtimeStats: null,
+  shaderGraph: undefined,
+  runBehaviorGraphOnPlay: true,
 
   actions: {
     setSettingsOpen: (open) => set({ isSettingsOpen: open }),
@@ -241,6 +247,8 @@ export const useAppState = create<AppState>()((set, get) => ({
     setHardwareCapabilities: (cap, at) => set({ hardwareCapabilities: cap, hardwareLastProbedAt: at }),
 
     setNodeGraph: (graph) => set({ nodeGraph: graph }),
+    setShaderGraph: (graph) => set({ shaderGraph: graph }),
+    setRunBehaviorGraphOnPlay: (enabled) => set({ runBehaviorGraphOnPlay: enabled }),
 
     setBuildTarget: (target) => set({ selectedBuildTarget: target }),
     setBuildConfig: (config) => set({ selectedBuildConfig: config }),
@@ -254,8 +262,12 @@ export const useAppState = create<AppState>()((set, get) => ({
     setViewportBackend: (backend) => set({ viewportBackend: backend }),
 
     playRuntime: async () => {
-      const { scene, actions } = get();
+      const { scene, actions, nodeGraph, runBehaviorGraphOnPlay, selectedEntityId } = get();
       if (!scene) return;
+      setRuntimeGraphOptions({
+        behaviorGraph: runBehaviorGraphOnPlay ? nodeGraph : null,
+        targetEntityId: selectedEntityId,
+      });
       const runtime = bindSceneRuntime(scene, {
         onLog: (level, message) => actions.pushConsole({ level, message }),
         onSceneMutated: () => get().actions.notifySceneMutated(),

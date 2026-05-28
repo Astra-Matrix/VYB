@@ -10,7 +10,7 @@ import {
   bootstrapProjectAtPath,
   createProjectWorkspace,
 } from '../../app/workspace/projectWorkspace';
-import { createSampleNodeGraph } from '../../engine/visual-scripting';
+import { createSampleNodeGraph, createSampleShaderGraph } from '../../engine/visual-scripting';
 import { isTauri } from '../../app/platform/isTauri';
 import { applyImportToWorkspace } from '../../app/import/runImportPipeline';
 import { BUNDLED_GODOT_IMPORT_ROOT } from '../../engine/import/bundledImportSources';
@@ -37,6 +37,7 @@ export function StartupScreen() {
   const navigate = useNavigate();
   const applyWorkspace = useAppState((s) => s.actions.applyWorkspace);
   const setNodeGraph = useAppState((s) => s.actions.setNodeGraph);
+  const setShaderGraph = useAppState((s) => s.actions.setShaderGraph);
   const setSettingsOpen = useAppState((s) => s.actions.setSettingsOpen);
   const pushConsole = useAppState((s) => s.actions.pushConsole);
   const setImportReport = useAppState((s) => s.actions.setImportReport);
@@ -60,6 +61,7 @@ export function StartupScreen() {
   async function enterStudio(workspace: Awaited<ReturnType<typeof bootstrapProjectAtPath>>) {
     applyWorkspace(workspace);
     setNodeGraph(createSampleNodeGraph());
+    setShaderGraph(createSampleShaderGraph());
     rememberRecent(workspace.rootPath, workspace.project.name);
     pushConsole({ level: 'info', message: `Opened project: ${workspace.project.name}` });
     navigate('/studio');
@@ -119,6 +121,7 @@ export function StartupScreen() {
       const workspace = await bootstrapBundledSampleProject('Godot Import Demo');
       applyWorkspace(workspace);
       setNodeGraph(createSampleNodeGraph());
+    setShaderGraph(createSampleShaderGraph());
 
       const detection = detector.detectFromDirectoryListing(BUNDLED_GODOT_IMPORT_ROOT, ['project.godot'], [
         'project.godot',

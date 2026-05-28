@@ -21,6 +21,7 @@ VYB’s architecture targets an experience that can eventually exceed Unreal Eng
 - **Phase 2 complete:** WebGPU viewport renderer with canvas fallback, grid, mesh proxies, frame stats.
 - **Phase 3 complete:** ECS runtime tick, TS/JS script bridges, play/pause/stop in editor.
 - **Phase 4 complete:** Godot/raw import translators, `.vybmat` materials, import preview and Tauri import execution.
+- **Phase 5 complete:** Visual scripting node editor, behavior graph runtime, shader graph WGSL compiler.
 
 ## Setup
 1. Install dependencies:

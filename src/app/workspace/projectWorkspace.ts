@@ -1,5 +1,5 @@
 import { AssetRegistry } from '../../engine/assets/AssetRegistry';
-import { createSampleNodeGraph } from '../../engine/visual-scripting';
+import { createSampleNodeGraph, createSampleShaderGraph } from '../../engine/visual-scripting';
 import { createSampleScene, sceneFromJson, type VybScene } from '../../engine/scene';
 import type { VybProject } from '../../engine/project/types';
 import { isTauri } from '../platform/isTauri';
@@ -140,4 +140,4 @@ export async function bootstrapBundledSampleProject(nameOverride?: string): Prom
   };
 }
 
-export { createSampleNodeGraph };
+export { createSampleNodeGraph, createSampleShaderGraph };

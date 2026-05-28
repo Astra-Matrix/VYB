@@ -3,7 +3,14 @@ import type { ScriptSourceRegistry } from '../scripting/scriptSourceRegistry';
 import { RuntimeClock } from './RuntimeClock';
 import type { RuntimeSystem, RuntimeSystemContext } from './RuntimeSystem';
 import { ScriptSystem } from './systems/ScriptSystem';
+import { VisualScriptSystem } from './systems/VisualScriptSystem';
+import type { NodeGraphModel } from '../visual-scripting/NodeGraphModel';
 import type { RuntimePlaybackState, RuntimeStats, RuntimeTickInfo } from './types';
+
+export interface SceneRuntimeOptions {
+  behaviorGraph?: NodeGraphModel | null;
+  targetEntityId?: string;
+}
 
 export interface SceneRuntimeHooks {
   onSceneMutated?: () => void;
@@ -23,9 +30,19 @@ export class SceneRuntime {
     readonly scene: VybScene,
     registry: ScriptSourceRegistry,
     private readonly hooks: SceneRuntimeHooks = {},
+    options: SceneRuntimeOptions = {},
   ) {
     this.scriptSystem = new ScriptSystem(registry);
-    this.systems = [this.scriptSystem];
+    const systems: RuntimeSystem[] = [this.scriptSystem];
+    if (options.behaviorGraph) {
+      systems.push(
+        new VisualScriptSystem(
+          () => options.behaviorGraph,
+          options.targetEntityId,
+        ),
+      );
+    }
+    this.systems = systems;
   }
 
   getPlayback(): RuntimePlaybackState {
