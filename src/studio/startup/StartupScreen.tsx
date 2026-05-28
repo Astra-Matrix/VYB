@@ -5,6 +5,7 @@ import { Button } from '../../ui/components/Button';
 import { GlassPanel } from '../../ui/components/GlassPanel';
 import { TextField } from '../../ui/components/TextField';
 import { Badge } from '../../ui/components/Badge';
+import { STUDIO_BUILD_LABEL } from '../../app/studioBuildLabel';
 import { HudRing } from '../../ui/components/HudRing';
 import { StatusLight } from '../../ui/components/StatusLight';
 import { useAppState } from '../../app/state/useAppState';
@@ -234,6 +235,7 @@ export function StartupScreen() {
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <Badge variant="plasma">WebGPU</Badge>
               <Badge variant="signal">ECS Runtime</Badge>
+              <Badge variant="muted">{STUDIO_BUILD_LABEL}</Badge>
               <span className="flex items-center gap-1.5 text-[10px] font-mono text-vyb-muted uppercase tracking-widest">
                 <StatusLight variant="green" pulse />
                 {bootLabels[bootPhase]}

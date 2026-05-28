@@ -65,11 +65,18 @@ export function ProjectExplorerPanel() {
           <div className="text-[11px] text-vyb-text/55 px-1 py-2">No files indexed yet.</div>
         ) : (
           entries.slice(0, 300).map((e) => (
-            <div
+            <button
               key={e.relativePath}
-              className="flex items-center gap-2 text-[11px] text-vyb-text/70 truncate rounded px-1 py-0.5 hover:bg-white/5"
+              type="button"
+              className="w-full flex items-center gap-2 text-[11px] text-vyb-text/70 truncate rounded px-1 py-0.5 hover:bg-white/5 hover:text-vyb-plasma text-left vyb-focus-ring"
               style={{ paddingLeft: 4 + e.depth * 10 }}
               title={e.relativePath}
+              onClick={() =>
+                pushConsole({
+                  level: 'info',
+                  message: e.isDirectory ? `Folder: ${e.relativePath}` : `File: ${e.relativePath}`,
+                })
+              }
             >
               {e.isDirectory ? (
                 <Folder className="w-3.5 h-3.5 text-vyb-text/35 shrink-0" />
@@ -77,7 +84,7 @@ export function ProjectExplorerPanel() {
                 <File className="w-3.5 h-3.5 text-vyb-text/35 shrink-0" />
               )}
               <span className="truncate">{e.name}</span>
-            </div>
+            </button>
           ))
         )}
       </div>

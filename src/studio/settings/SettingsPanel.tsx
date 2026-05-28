@@ -10,7 +10,13 @@ export function SettingsPanel() {
   if (!isSettingsOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={() => setSettingsOpen(false)}
+      onKeyDown={(e) => e.key === 'Escape' && setSettingsOpen(false)}
+      role="presentation"
+    >
+      <div onClick={(e) => e.stopPropagation()} role="dialog">
       <GlassPanel className="w-[720px] max-w-[92vw] p-4">
         <div className="flex items-center justify-between gap-4 mb-3">
           <div>
@@ -42,6 +48,7 @@ export function SettingsPanel() {
           </Button>
         </div>
       </GlassPanel>
+      </div>
     </div>
   );
 }

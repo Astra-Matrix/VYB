@@ -29,7 +29,7 @@ export function ModeSwitcher() {
   const setActiveMode = useAppState((s) => s.actions.setActiveMode);
 
   return (
-    <div className="flex items-center gap-0.5 p-1 rounded-md bg-vyb-charcoal/90 border border-vyb-line/80 shadow-panel">
+    <div className="flex items-center gap-0.5 p-1 rounded-md bg-vyb-charcoal/90 border border-vyb-line/80 shadow-panel overflow-x-auto max-w-[min(100%,52rem)]">
       {MODES.map((m) => {
         const Icon = m.icon;
         const active = m.id === activeMode;
@@ -38,12 +38,12 @@ export function ModeSwitcher() {
             key={m.id}
             type="button"
             onClick={() => setActiveMode(m.id)}
-            className={`relative vyb-tab ${active ? 'vyb-tab-active' : ''}`}
+            className={`relative z-10 vyb-tab shrink-0 ${active ? 'vyb-tab-active' : ''}`}
           >
             {active ? (
               <motion.span
                 layoutId="mode-pill"
-                className="absolute inset-0 rounded-md border border-vyb-plasma/40"
+                className="absolute inset-0 rounded-md border border-vyb-plasma/40 pointer-events-none"
                 style={{
                   background: 'linear-gradient(180deg, rgba(255,107,26,0.15) 0%, rgba(255,107,26,0.04) 100%)',
                   boxShadow: '0 0 14px rgba(255,107,26,0.2)',

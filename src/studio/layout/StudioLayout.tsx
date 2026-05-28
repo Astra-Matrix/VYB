@@ -16,6 +16,8 @@ import { VisualScriptingPanel } from '../visual-scripting/VisualScriptingPanel';
 import { ImportReportPanel } from '../panels/ImportReportPanel';
 import { PluginListPanel } from '../panels/PluginListPanel';
 import { SystemsRuntimePanel } from '../panels/SystemsRuntimePanel';
+import { DocsModal } from '../docs/DocsModal';
+import { STUDIO_BUILD_LABEL } from '../../app/studioBuildLabel';
 
 function ResizeHandle() {
   return (
@@ -35,6 +37,7 @@ function StatusBar() {
     <footer className="h-9 shrink-0 border-t border-vyb-line/80 bg-vyb-charcoal/95 backdrop-blur-panel px-4 flex items-center justify-between text-[10px] text-vyb-muted font-mono">
       <span className="truncate">
         {project ? `${project.name} v${project.version}` : '—'} • {mode}
+        <span className="text-vyb-muted ml-2 hidden lg:inline">• {STUDIO_BUILD_LABEL}</span>
       </span>
       <span className="flex gap-4">
         {runtimeStats ? (
@@ -128,6 +131,9 @@ function CenterPanel() {
 }
 
 export function StudioLayout() {
+  const openDocsId = useAppState((s) => s.openDocsId);
+  const setOpenDocsId = useAppState((s) => s.actions.setOpenDocsId);
+
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-vyb-bg bg-mesh-hero">
       <div className="h-[2px] shrink-0 bg-accent-bar opacity-90" />
@@ -159,6 +165,9 @@ export function StudioLayout() {
 
       <StatusBar />
       <SettingsPanel />
+      {openDocsId ? (
+        <DocsModal docId={openDocsId} onClose={() => setOpenDocsId(undefined)} onSelectDoc={setOpenDocsId} />
+      ) : null}
     </div>
   );
 }

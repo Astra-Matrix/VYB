@@ -43,6 +43,7 @@ export interface AppState {
     | 'Build'
     | 'AI';
   isSettingsOpen: boolean;
+  openDocsId?: string;
 
   consoleEntries: StudioConsoleEntry[];
 
@@ -73,6 +74,7 @@ export interface AppState {
 
   actions: {
     setSettingsOpen: (open: boolean) => void;
+    setOpenDocsId: (docId?: string) => void;
     setActiveMode: (mode: AppState['activeMode']) => void;
 
     applyWorkspace: (workspace: WorkspaceBootstrapResult) => void;
@@ -143,6 +145,7 @@ export const useAppState = create<AppState>()((set, get) => ({
 
   activeMode: 'Design',
   isSettingsOpen: false,
+  openDocsId: undefined,
   consoleEntries: [],
 
   hardwareCapabilities: undefined,
@@ -169,6 +172,7 @@ export const useAppState = create<AppState>()((set, get) => ({
 
   actions: {
     setSettingsOpen: (open) => set({ isSettingsOpen: open }),
+    setOpenDocsId: (docId) => set({ openDocsId: docId }),
     setActiveMode: (mode) => set({ activeMode: mode }),
 
     applyWorkspace: (workspace) => {

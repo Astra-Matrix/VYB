@@ -7,6 +7,7 @@ import { Badge } from '../../ui/components/Badge';
 import { useAppState } from '../../app/state/useAppState';
 import { useNavigate } from 'react-router-dom';
 import { chooseDirectory, detectImportCompatibility } from '../../app/commands/tauriCommands';
+import { isTauri } from '../../app/platform/isTauri';
 import { planner, reportBuilder } from '../../engine/import';
 import type { DetectedProject, ImportDetectionResult, ImportSourceType } from '../../engine/import/ImportDetector';
 
@@ -30,6 +31,9 @@ function coerceDetection(report: unknown): ImportDetectionResult {
 
 export function CommandBar() {
   const setSettingsOpen = useAppState((s) => s.actions.setSettingsOpen);
+  const setActiveMode = useAppState((s) => s.actions.setActiveMode);
+  const setOpenDocsId = useAppState((s) => s.actions.setOpenDocsId);
+  const closeProject = useAppState((s) => s.actions.closeProject);
   const project = useAppState((s) => s.currentProject);
   const projectRoot = useAppState((s) => s.projectRootPath);
   const setImportReport = useAppState((s) => s.actions.setImportReport);
@@ -45,15 +49,21 @@ export function CommandBar() {
   return (
     <header className="vyb-toolbar justify-between">
       <div className="flex items-center gap-3 min-w-0">
-        <motion.div
-          className="h-9 w-9 rounded-md border border-vyb-plasma/50 bg-vyb-graphite shadow-rim-plasma"
+        <motion.button
+          type="button"
+          className="h-9 w-9 rounded-md border border-vyb-plasma/50 bg-vyb-graphite shadow-rim-plasma vyb-focus-ring"
           whileHover={{ scale: 1.03 }}
           transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
+          title="Return to launcher"
+          onClick={() => {
+            closeProject();
+            navigate('/');
+          }}
         >
           <div className="h-full w-full flex items-center justify-center">
             <Zap className="w-4 h-4 text-vyb-plasma" />
           </div>
-        </motion.div>
+        </motion.button>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-display font-bold text-sm tracking-wide text-vyb-text">VYB Studio</span>
@@ -68,10 +78,10 @@ export function CommandBar() {
       <ModeSwitcher />
 
       <div className="flex items-center gap-2">
-        <IconButton aria-label="AI" onClick={() => {}} title="AI tools">
+        <IconButton aria-label="AI" onClick={() => setActiveMode('AI')} title="AI Assist mode">
           <Sparkles className="w-4 h-4 text-vyb-magenta" />
         </IconButton>
-        <IconButton aria-label="Docs" onClick={() => navigate('/docs/01_VISION')} title="Documentation">
+        <IconButton aria-label="Docs" onClick={() => setOpenDocsId('01_VISION')} title="Documentation">
           <FileText className="w-4 h-4" />
         </IconButton>
         <IconButton aria-label="Settings" onClick={() => setSettingsOpen(true)} title="Settings">
@@ -113,6 +123,13 @@ export function CommandBar() {
           size="sm"
           onClick={() => {
             void (async () => {
+              if (!isTauri()) {
+                pushConsole({
+                  level: 'warn',
+                  message: 'Import detection requires VYB Desktop (npm run tauri:dev). Try “Preview Godot Import” on the launcher.',
+                });
+                return;
+              }
               try {
                 const selected = await chooseDirectory(projectRoot);
                 if (!selected) return;
