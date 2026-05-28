@@ -1,5 +1,10 @@
 import type { VybScene } from '../../scene';
-import type { ViewportRenderer } from '../renderInterfaces';
+import type {
+  ViewportFrameStats,
+  ViewportLightingMode,
+  ViewportPreviewMode,
+  ViewportRenderer,
+} from '../renderInterfaces';
 
 /**
  * PlaceholderViewportRenderer
@@ -7,12 +12,22 @@ import type { ViewportRenderer } from '../renderInterfaces';
  * Architecture matches the future ViewportRenderer interface.
  */
 export class PlaceholderViewportRenderer implements ViewportRenderer {
+  readonly backendId = 'placeholder' as const;
+
   private ctx: CanvasRenderingContext2D | null = null;
   private width = 0;
   private height = 0;
   private scene?: VybScene;
   private cameraMode: 'perspective' | 'orthographic' = 'perspective';
+  private gridEnabled = true;
+  private lightingMode: ViewportLightingMode = 'lit';
+  private previewMode: ViewportPreviewMode = 'shaded';
   private raf?: number;
+  private frameMs = 0;
+  private fps = 0;
+  private lastFrameAt = performance.now();
+  private fpsAccum = 0;
+  private fpsFrames = 0;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d');
@@ -34,7 +49,28 @@ export class PlaceholderViewportRenderer implements ViewportRenderer {
     this.cameraMode = mode;
   }
 
+  setGridEnabled(enabled: boolean): void {
+    this.gridEnabled = enabled;
+  }
+
+  setLightingMode(mode: ViewportLightingMode): void {
+    this.lightingMode = mode;
+  }
+
+  setPreviewMode(mode: ViewportPreviewMode): void {
+    this.previewMode = mode;
+  }
+
+  getFrameStats(): ViewportFrameStats | null {
+    return { fps: this.fps, frameMs: this.frameMs, backend: 'placeholder', drawCalls: 0 };
+  }
+
+  destroy(): void {
+    this.stopLoop();
+  }
+
   renderFrame(): void {
+    const frameStart = performance.now();
     if (!this.ctx || !this.scene) return;
     const ctx = this.ctx;
 
@@ -47,8 +83,9 @@ export class PlaceholderViewportRenderer implements ViewportRenderer {
     ctx.fillStyle = '#0a0b0f';
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Grid.
-    this.drawGrid(ctx);
+    if (this.gridEnabled) {
+      this.drawGrid(ctx);
+    }
     // Gizmo axes.
     this.drawAxes(ctx);
     // Scene marker proxies.
@@ -57,7 +94,22 @@ export class PlaceholderViewportRenderer implements ViewportRenderer {
     // Subtle HUD hint.
     ctx.fillStyle = 'rgba(232,236,244,0.8)';
     ctx.font = '12px JetBrains Mono, monospace';
-    ctx.fillText(`Viewport (placeholder) — ${this.cameraMode}`, 12, 20);
+    ctx.fillText(
+      `Viewport (placeholder) — ${this.cameraMode} • ${this.lightingMode} • ${this.previewMode}`,
+      12,
+      20,
+    );
+
+    const now = performance.now();
+    this.frameMs = now - frameStart;
+    this.fpsAccum += this.frameMs;
+    this.fpsFrames++;
+    if (now - this.lastFrameAt >= 500) {
+      this.fps = Math.round((this.fpsFrames * 1000) / this.fpsAccum);
+      this.fpsAccum = 0;
+      this.fpsFrames = 0;
+      this.lastFrameAt = now;
+    }
   }
 
   private drawGrid(ctx: CanvasRenderingContext2D) {

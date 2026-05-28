@@ -8,7 +8,7 @@ This roadmap is architecture-first. Each phase aims to produce stable interfaces
 - Import detection + report generation scaffold
 - ECS/scene editor scaffolding
 
-## Phase 1 — Project system + asset registry + basic scene editor (in progress)
+## Phase 1 — Project system + asset registry + basic scene editor (complete)
 - Real project open/create via Tauri filesystem commands
 - Native asset folder scanning + project tree listing
 - Scene JSON load/save (`scenes/*.vybscene`)
@@ -16,16 +16,23 @@ This roadmap is architecture-first. Each phase aims to produce stable interfaces
 - Inspector: editable transform + entity rename
 - Asset browser + project explorer refresh
 
-## Phase 2 — WebGPU viewport and renderer foundation
-- Real WebGPU renderer backend
-- Viewport rendering + frame stats
+## Phase 2 — WebGPU viewport and renderer foundation (complete)
+- WebGPU viewport renderer with canvas fallback
+- Scene camera + directional light driven shading
+- Grid, mesh proxies (unit cubes), preview/lighting modes
+- Live frame stats (FPS, frame ms, draw calls)
 
-## Phase 3 — ECS runtime and scripting
-- ECS runtime tick integration
-- Script runtime bridges
+## Phase 3 — ECS runtime and scripting (complete)
+- SceneRuntime with fixed-step clock and ScriptSystem
+- TypeScript/JavaScript script bridges + Lua/Rust/WASM stubs
+- Play/Pause/Stop/Step controls in viewport and command bar
+- Sample `scripts/player.ts` rotates Cube during playback
 
-## Phase 4 — Import pipelines (Unity/Unreal/Godot/raw assets)
-- Scene + material translation
+## Phase 4 — Import pipelines (Unity/Unreal/Godot/raw assets) (complete)
+- Godot `.tscn` → `.vybscene` translator (Camera/Light/MeshInstance3D)
+- Raw asset folder auto-layout scenes
+- `.vybmat` material translation stubs + import.map.json tracking
+- Import preview (web) and full import (Tauri copy/write)
 
 ## Phase 5 — Visual scripting and shader graph
 - Node editor UX + execution/data graph system

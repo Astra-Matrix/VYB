@@ -57,6 +57,11 @@
           "visible": true,
           "castShadows": true,
           "receiveShadows": true
+        },
+        "script": {
+          "language": "typescript",
+          "entry": "scripts/player.ts",
+          "parameters": { "speed": 45 }
         }
       }
     }

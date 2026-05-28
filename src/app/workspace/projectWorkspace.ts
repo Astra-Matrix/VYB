@@ -123,6 +123,9 @@ export async function bootstrapBundledSampleProject(nameOverride?: string): Prom
     { relativePath: 'assets/mesh/unit-cube.glb', name: 'unit-cube.glb', isDirectory: false, depth: 3 },
     { relativePath: 'scenes', name: 'scenes', isDirectory: true, depth: 1 },
     { relativePath: 'scenes/main.vybscene', name: 'main.vybscene', isDirectory: false, depth: 2 },
+    { relativePath: 'scripts', name: 'scripts', isDirectory: true, depth: 1 },
+    { relativePath: 'scripts/player.ts', name: 'player.ts', isDirectory: false, depth: 2 },
+    { relativePath: 'scripts/logic.js', name: 'logic.js', isDirectory: false, depth: 2 },
   ];
 
   return {

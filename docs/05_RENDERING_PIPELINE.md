@@ -10,10 +10,11 @@ VYB’s renderer is abstracted to support both WebGPU-first workflows and future
 - `PostProcessingSystem`
 
 ## Current implementation status
-- Placeholder viewport renderer (2D canvas) exists for UI integration.
+- **WebGPU viewport renderer** (`WebGpuViewportRenderer`): grid, lit mesh proxies, scene camera, frame stats.
+- **Canvas fallback** (`PlaceholderViewportRenderer`) when WebGPU is unavailable.
+- Factory: `createViewportRenderer(canvas)` selects the best backend at runtime.
 
 ## Planned path
-- WebGPU viewport and pipelines
+- PBR materials, real mesh GPU buffers, editor gizmos and picking
 - Native renderer integration behind the same interfaces
-- Real scene rendering and editor gizmos
 

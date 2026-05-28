@@ -17,9 +17,10 @@ VYB’s architecture targets an experience that can eventually exceed Unreal Eng
 
 ## Current status
 - **Phase 0 complete:** studio shell, typed architecture, docs, tests, plugin manifests.
-- **Phase 1 (current):** real project I/O (Tauri), asset scanning, scene persistence, improved hierarchy/inspector.
-- Renderer abstraction: placeholder viewport (WebGPU planned Phase 2).
-- Import layer: detection + honest migration reports (full translation Phase 4).
+- **Phase 1 complete:** real project I/O (Tauri), asset scanning, scene persistence, hierarchy/inspector editing.
+- **Phase 2 complete:** WebGPU viewport renderer with canvas fallback, grid, mesh proxies, frame stats.
+- **Phase 3 complete:** ECS runtime tick, TS/JS script bridges, play/pause/stop in editor.
+- **Phase 4 complete:** Godot/raw import translators, `.vybmat` materials, import preview and Tauri import execution.
 
 ## Setup
 1. Install dependencies:

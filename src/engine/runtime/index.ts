@@ -1,6 +1,5 @@
-/**
- * runtime
- * Placeholder module for future engine runtime (ECS runtime, simulation tick, renderer integration).
- */
-export {};
-
+export * from './types';
+export * from './RuntimeClock';
+export * from './RuntimeSystem';
+export * from './SceneRuntime';
+export * from './systems/ScriptSystem';

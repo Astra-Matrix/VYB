@@ -1,6 +1,7 @@
 #![allow(clippy::needless_return)]
 
 mod filesystem;
+mod import_io;
 mod scene_io;
 
 use serde::{Deserialize, Serialize};
@@ -292,6 +293,61 @@ fn save_scene(input: scene_io::SaveSceneInput) -> Result<scene_io::SaveSceneOutp
   scene_io::save_scene(input)
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ReadImportTextInput {
+  root_path: String,
+  relative_path: String,
+}
+
+#[derive(Debug, Serialize)]
+struct ReadImportTextOutput {
+  content: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WriteProjectTextInput {
+  root_path: String,
+  relative_path: String,
+  content: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CopyImportAssetInput {
+  source_root: String,
+  source_relative: String,
+  target_root: String,
+  target_relative: String,
+}
+
+#[tauri::command]
+fn list_import_source_files(input: RootPathInput) -> Result<import_io::ListImportFilesResult, String> {
+  import_io::list_import_source_files(&input.root_path)
+}
+
+#[tauri::command]
+fn read_import_source_text(input: ReadImportTextInput) -> Result<ReadImportTextOutput, String> {
+  let content = import_io::read_import_source_text(&input.root_path, &input.relative_path)?;
+  Ok(ReadImportTextOutput { content })
+}
+
+#[tauri::command]
+fn write_project_text_file(input: WriteProjectTextInput) -> Result<(), String> {
+  import_io::write_project_text_file(&input.root_path, &input.relative_path, &input.content)
+}
+
+#[tauri::command]
+fn copy_import_asset(input: CopyImportAssetInput) -> Result<(), String> {
+  import_io::copy_import_asset(
+    &input.source_root,
+    &input.source_relative,
+    &input.target_root,
+    &input.target_relative,
+  )
+}
+
 #[tauri::command]
 fn probe_hardware_capabilities() -> Result<serde_json::Value, String> {
   Ok(serde_json::json!({
@@ -326,6 +382,10 @@ fn main() {
       list_project_tree,
       load_scene,
       save_scene,
+      list_import_source_files,
+      read_import_source_text,
+      write_project_text_file,
+      copy_import_asset,
       probe_hardware_capabilities,
       read_doc_markdown
     ])

@@ -20,12 +20,19 @@ import { GlassPanel } from '../../ui/components/GlassPanel';
 function StatusBar() {
   const project = useAppState((s) => s.currentProject);
   const mode = useAppState((s) => s.activeMode);
+  const viewportBackend = useAppState((s) => s.viewportBackend);
+  const backendLabel =
+    viewportBackend === 'webgpu'
+      ? 'WebGPU'
+      : viewportBackend === 'placeholder'
+        ? 'Canvas placeholder'
+        : 'Initializing…';
   return (
     <div className="h-10 border-t border-vyb-border/60 bg-vyb-panel/30 backdrop-blur-panel px-4 flex items-center justify-between text-[11px] text-vyb-text/55">
       <div className="truncate">
         {project ? `${project.name} — v${project.version}` : 'No project opened'} • Mode: {mode}
       </div>
-      <div>Renderer backend: WebGPU (planned) • Editor renderer: placeholder</div>
+      <div>Viewport renderer: {backendLabel}</div>
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PlaceholderViewportRenderer } from '../../engine/renderer/placeholder';
+import { Pause, Play, Square, StepForward } from 'lucide-react';
+import { createViewportRenderer } from '../../engine/renderer/createViewportRenderer';
+import type { ViewportRenderer } from '../../engine/renderer/renderInterfaces';
 import { useAppState } from '../../app/state/useAppState';
+import { getSceneRuntime } from '../../app/runtime/sceneRuntimeController';
 
 type PreviewMode = 'shaded' | 'wireframe' | 'material-preview';
 type LightingMode = 'default' | 'unlit' | 'lit';
@@ -30,32 +33,64 @@ function Toggle({
 export function ViewportPanel() {
   const scene = useAppState((s) => s.scene);
   const activeMode = useAppState((s) => s.activeMode);
+  const setViewportBackend = useAppState((s) => s.actions.setViewportBackend);
+  const runtimePlayback = useAppState((s) => s.runtimePlayback);
+  const runtimeStats = useAppState((s) => s.runtimeStats);
+  const playRuntime = useAppState((s) => s.actions.playRuntime);
+  const pauseRuntime = useAppState((s) => s.actions.pauseRuntime);
+  const stopRuntime = useAppState((s) => s.actions.stopRuntime);
+  const stepRuntime = useAppState((s) => s.actions.stepRuntime);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rendererRef = useRef<PlaceholderViewportRenderer | null>(null);
+  const lastSimTimeRef = useRef(performance.now());
+  const rendererRef = useRef<ViewportRenderer | null>(null);
+  const [rendererReady, setRendererReady] = useState(false);
+  const [frameStats, setFrameStats] = useState<{ fps: number; frameMs: number; drawCalls: number } | null>(null);
 
   const [cameraMode, setCameraMode] = useState<'perspective' | 'orthographic'>('perspective');
   const [gridEnabled, setGridEnabled] = useState(true);
   const [lightingMode, setLightingMode] = useState<LightingMode>('lit');
   const [previewMode, setPreviewMode] = useState<PreviewMode>('shaded');
 
-  const isRunning = useMemo(() => !!scene, [scene]);
+  const isRunning = useMemo(() => !!scene && rendererReady, [scene, rendererReady]);
+  const backendLabel = rendererRef.current?.backendId ?? '…';
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-    if (!rendererRef.current) rendererRef.current = new PlaceholderViewportRenderer(canvasRef.current);
+    let cancelled = false;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
+    void (async () => {
+      const renderer = await createViewportRenderer(canvas);
+      if (cancelled) {
+        renderer.destroy();
+        return;
+      }
+      rendererRef.current = renderer;
+      setViewportBackend(renderer.backendId);
+      setRendererReady(true);
+    })();
+
+    return () => {
+      cancelled = true;
+      rendererRef.current?.destroy();
+      rendererRef.current = null;
+      setRendererReady(false);
+      setViewportBackend(null);
+    };
+  }, [setViewportBackend]);
+
+  useEffect(() => {
     const renderer = rendererRef.current;
-    if (!scene) return;
-
+    if (!renderer || !scene) return;
     renderer.setScene(scene);
     renderer.setCameraMode(cameraMode);
     renderer.renderFrame();
-  }, [scene, cameraMode]);
+  }, [scene, cameraMode, rendererReady]);
 
   useEffect(() => {
-    if (!rendererRef.current) return;
     const renderer = rendererRef.current;
+    if (!renderer) return;
     const onResize = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -67,22 +102,58 @@ export function ViewportPanel() {
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+  }, [rendererReady]);
 
   useEffect(() => {
-    if (!rendererRef.current) return;
-    if (!isRunning) return;
     const renderer = rendererRef.current;
-    renderer.startLoop();
-    return () => renderer.stopLoop();
-  }, [isRunning]);
+    if (!renderer || !isRunning || !scene) return;
+
+    let raf = 0;
+    const frame = () => {
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - lastSimTimeRef.current) / 1000);
+      lastSimTimeRef.current = now;
+
+      const draw = () => {
+        renderer.setScene(scene);
+        renderer.renderFrame();
+        raf = window.requestAnimationFrame(frame);
+      };
+
+      if (runtimePlayback === 'playing') {
+        const runtime = getSceneRuntime();
+        if (runtime) {
+          void runtime.tickFrame(dt).then(draw);
+          return;
+        }
+      }
+
+      draw();
+    };
+
+    raf = window.requestAnimationFrame(frame);
+    return () => window.cancelAnimationFrame(raf);
+  }, [isRunning, runtimePlayback, scene]);
 
   useEffect(() => {
-    if (!rendererRef.current) return;
-    rendererRef.current.setCameraMode(cameraMode);
-    // grid / lighting / preview are placeholders; we still allow toggling for future integration.
-    rendererRef.current.renderFrame();
-  }, [gridEnabled, lightingMode, previewMode, cameraMode]);
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    renderer.setCameraMode(cameraMode);
+    renderer.setGridEnabled(gridEnabled);
+    renderer.setLightingMode(lightingMode);
+    renderer.setPreviewMode(previewMode);
+    renderer.renderFrame();
+  }, [gridEnabled, lightingMode, previewMode, cameraMode, rendererReady]);
+
+  useEffect(() => {
+    if (!isRunning) return;
+    const id = window.setInterval(() => {
+      const stats = rendererRef.current?.getFrameStats();
+      if (!stats) return;
+      setFrameStats({ fps: stats.fps, frameMs: stats.frameMs, drawCalls: stats.drawCalls });
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [isRunning]);
 
   return (
     <div className="relative w-full h-full">
@@ -93,6 +164,44 @@ export function ViewportPanel() {
           <div className="rounded-xl border border-vyb-border/60 bg-vyb-panel/60 backdrop-blur-panel shadow-glass p-3">
             <div className="text-xs font-bold tracking-wide text-vyb-text/80 mb-2">Viewport Controls</div>
             <div className="space-y-2">
+              <div className="flex gap-1 flex-wrap">
+                <button
+                  className="px-2 py-1 rounded-lg text-xs font-semibold border bg-vyb-accent/20 border-vyb-accent/40 flex items-center gap-1"
+                  disabled={!scene}
+                  onClick={() => void playRuntime()}
+                  title="Play"
+                >
+                  <Play className="w-3 h-3" /> Play
+                </button>
+                <button
+                  className="px-2 py-1 rounded-lg text-xs font-semibold border bg-black/10 border-vyb-border/60 flex items-center gap-1"
+                  disabled={runtimePlayback !== 'playing'}
+                  onClick={() => pauseRuntime()}
+                  title="Pause"
+                >
+                  <Pause className="w-3 h-3" /> Pause
+                </button>
+                <button
+                  className="px-2 py-1 rounded-lg text-xs font-semibold border bg-black/10 border-vyb-border/60 flex items-center gap-1"
+                  disabled={runtimePlayback === 'stopped'}
+                  onClick={() => void stopRuntime()}
+                  title="Stop"
+                >
+                  <Square className="w-3 h-3" /> Stop
+                </button>
+                <button
+                  className="px-2 py-1 rounded-lg text-xs font-semibold border bg-black/10 border-vyb-border/60 flex items-center gap-1"
+                  disabled={runtimePlayback !== 'paused'}
+                  onClick={() => void stepRuntime()}
+                  title="Step one fixed tick"
+                >
+                  <StepForward className="w-3 h-3" /> Step
+                </button>
+              </div>
+              <div className="text-[10px] font-mono text-vyb-text/55">
+                Runtime: {runtimePlayback}
+                {runtimeStats ? ` • tick ${runtimeStats.tick} • scripts ${runtimeStats.scriptsActive}` : ''}
+              </div>
               <div className="flex gap-2">
                 <button
                   className={[
@@ -139,22 +248,30 @@ export function ViewportPanel() {
                 </select>
               </div>
               <div className="text-[11px] text-vyb-text/55 leading-relaxed">
-                Camera controls, gizmos, frame stats, and real materials are planned. This placeholder exists to validate
-                the renderer abstraction and UI layout.
+                Press Play to run ECS script ticks (Cube rotates via scripts/player.ts). WebGPU viewport falls back to
+                canvas when unavailable.
               </div>
             </div>
           </div>
         </div>
 
         <div className="pointer-events-auto">
-          <div className="rounded-xl border border-vyb-border/60 bg-vyb-panel/60 backdrop-blur-panel shadow-glass p-3 text-right">
+          <div className="rounded-xl border border-vyb-border/60 bg-vyb-panel/60 backdrop-blur-panel shadow-glass p-3 text-right min-w-[140px]">
             <div className="text-xs font-bold text-vyb-text/80">Mode</div>
             <div className="text-sm font-semibold text-vyb-text">{activeMode}</div>
-            <div className="text-[11px] text-vyb-text/55 mt-1">Renderer backend indicator placeholder.</div>
+            <div className="text-[11px] text-vyb-text/55 mt-1">Backend: {backendLabel}</div>
+            {frameStats ? (
+              <div className="text-[11px] text-vyb-text/70 mt-2 font-mono">
+                {frameStats.fps} fps • {frameStats.frameMs.toFixed(1)} ms
+                <br />
+                {frameStats.drawCalls} draw calls
+              </div>
+            ) : (
+              <div className="text-[11px] text-vyb-text/45 mt-2">Initializing renderer…</div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
-

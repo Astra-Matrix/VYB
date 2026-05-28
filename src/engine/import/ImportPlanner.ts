@@ -55,8 +55,8 @@ export class ImportPlanner {
       estimatedEffort: 'significant',
       items: [
         { category: 'assets', source: 'unity', action: 'partial-import', description: 'Copy mesh/texture assets to assets/', targetPath: 'assets/', risk: 'medium' },
-        { category: 'scenes', source: 'unity', action: 'manual-migration', description: 'Unity scenes require scene translator (planned Phase 4)', risk: 'high' },
-        { category: 'materials', source: 'unity', action: 'planned', description: 'Shader Graph / URP materials need MaterialTranslator', risk: 'high' },
+        { category: 'scenes', source: 'unity', action: 'manual-migration', description: 'Unity scenes: asset copy + manual scene rebuild (YAML translator partial)', risk: 'high' },
+        { category: 'materials', source: 'unity', action: 'partial-import', description: 'Materials mapped to default .vybmat stubs', risk: 'medium' },
         { category: 'scripts', source: 'unity', action: 'manual-migration', description: 'C# scripts cannot auto-convert; migration notes provided', risk: 'high' },
         { category: 'prefabs', source: 'unity', action: 'planned', description: 'Prefab hierarchy translation planned', risk: 'medium' },
       ],
@@ -81,7 +81,8 @@ export class ImportPlanner {
       source,
       estimatedEffort: 'moderate',
       items: [
-        { category: 'scenes', source: 'godot', action: 'partial-import', description: 'Godot .tscn scene structure can be partially mapped to VYB nodes', risk: 'medium' },
+        { category: 'scenes', source: 'godot', action: 'partial-import', description: 'Godot .tscn translated to .vybscene (Camera/Light/MeshInstance3D)', risk: 'medium' },
+        { category: 'materials', source: 'godot', action: 'partial-import', description: 'Default .vybmat generated; Godot .tres mapping planned', risk: 'medium' },
         { category: 'scripts', source: 'godot', action: 'manual-migration', description: 'GDScript requires ScriptMigrationNotes', risk: 'high' },
         { category: 'assets', source: 'godot', action: 'import-now', description: 'Standard assets (PNG, WAV, glTF) can be indexed', targetPath: 'assets/', risk: 'low' },
       ],
@@ -94,7 +95,8 @@ export class ImportPlanner {
       estimatedEffort: 'minimal',
       items: [
         { category: 'assets', source: 'raw', action: 'import-now', description: 'Index raw asset files into VYB asset registry', targetPath: 'assets/', risk: 'low' },
-        { category: 'scenes', source: 'raw', action: 'manual-migration', description: 'No scene data detected; create scenes manually', risk: 'low' },
+        { category: 'scenes', source: 'raw', action: 'partial-import', description: 'Auto-layout .vybscene from mesh files (FBX/glTF/OBJ)', risk: 'low' },
+        { category: 'materials', source: 'raw', action: 'partial-import', description: 'Default lit .vybmat assigned to imported meshes', risk: 'low' },
       ],
     };
   }

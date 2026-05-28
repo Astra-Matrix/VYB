@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { VybProject } from '../../engine/project/types';
-import type { VybScene } from '../../engine/scene';
+import type { VybScene } from '../../engine/scene/VybScene';
 import type { AssetMetadata } from '../../engine/assets';
 import type { ImportReport } from '../../engine/import';
 import type { HardwareCapabilities } from '../../engine/hardware/hardwareCapabilities';
@@ -9,6 +9,8 @@ import type { BuildPlatformTarget } from '../../engine/build';
 import type { ProjectTreeEntryDto } from '../commands/tauriCommands';
 import type { TransformComponent } from '../../engine/components';
 import type { WorkspaceBootstrapResult } from '../workspace/projectWorkspace';
+import type { RuntimePlaybackState, RuntimeStats } from '../../engine/runtime/types';
+import { bindSceneRuntime, getSceneRuntime, stopSceneRuntime } from '../runtime/sceneRuntimeController';
 
 export interface StudioConsoleEntry {
   id: string;
@@ -54,6 +56,11 @@ export interface AppState {
   buildOutputFolder?: string;
   buildLogs: StudioConsoleEntry[];
 
+  viewportBackend: 'webgpu' | 'placeholder' | null;
+
+  runtimePlayback: RuntimePlaybackState;
+  runtimeStats: RuntimeStats | null;
+
   actions: {
     setSettingsOpen: (open: boolean) => void;
     setActiveMode: (mode: AppState['activeMode']) => void;
@@ -86,6 +93,22 @@ export interface AppState {
     setBuildOutputFolder: (folder?: string) => void;
     pushBuildLog: (entry: Omit<StudioConsoleEntry, 'id' | 'at'>) => void;
     clearBuildLogs: () => void;
+
+    setViewportBackend: (backend: AppState['viewportBackend']) => void;
+
+    playRuntime: () => Promise<void>;
+    pauseRuntime: () => void;
+    resumeRuntime: () => void;
+    stopRuntime: () => Promise<void>;
+    stepRuntime: () => Promise<void>;
+    notifySceneMutated: () => void;
+
+    applyImportedPreview: (payload: {
+      scene: VybScene;
+      sceneRelativePath: string;
+      assets?: AssetMetadata[];
+      projectTree?: ProjectTreeEntryDto[];
+    }) => void;
   };
 }
 
@@ -116,12 +139,16 @@ export const useAppState = create<AppState>()((set, get) => ({
   selectedBuildConfig: 'debug',
   buildOutputFolder: undefined,
   buildLogs: [],
+  viewportBackend: null,
+  runtimePlayback: 'stopped',
+  runtimeStats: null,
 
   actions: {
     setSettingsOpen: (open) => set({ isSettingsOpen: open }),
     setActiveMode: (mode) => set({ activeMode: mode }),
 
-    applyWorkspace: (workspace) =>
+    applyWorkspace: (workspace) => {
+      void stopSceneRuntime();
       set({
         projectRootPath: workspace.rootPath,
         currentProject: workspace.project,
@@ -130,7 +157,10 @@ export const useAppState = create<AppState>()((set, get) => ({
         selectedEntityId: workspace.selectEntityId,
         assetRegistry: { assets: workspace.assets, scannedAt: workspace.assetsScannedAt },
         projectTree: workspace.projectTree,
-      }),
+        runtimePlayback: 'stopped',
+        runtimeStats: null,
+      });
+    },
 
     openProject: ({ rootPath, project }) =>
       set({
@@ -138,7 +168,8 @@ export const useAppState = create<AppState>()((set, get) => ({
         currentProject: project,
       }),
 
-    closeProject: () =>
+    closeProject: () => {
+      void stopSceneRuntime();
       set({
         projectRootPath: undefined,
         currentProject: undefined,
@@ -153,7 +184,10 @@ export const useAppState = create<AppState>()((set, get) => ({
         nodeGraph: undefined,
         hardwareCapabilities: undefined,
         hardwareLastProbedAt: undefined,
-      }),
+        runtimePlayback: 'stopped',
+        runtimeStats: null,
+      });
+    },
 
     setScene: (scene) => set({ scene }),
     selectEntity: (entityId) => set({ selectedEntityId: entityId }),
@@ -216,5 +250,60 @@ export const useAppState = create<AppState>()((set, get) => ({
       set({ buildLogs: [...get().buildLogs, e] });
     },
     clearBuildLogs: () => set({ buildLogs: [] }),
+
+    setViewportBackend: (backend) => set({ viewportBackend: backend }),
+
+    playRuntime: async () => {
+      const { scene, actions } = get();
+      if (!scene) return;
+      const runtime = bindSceneRuntime(scene, {
+        onLog: (level, message) => actions.pushConsole({ level, message }),
+        onSceneMutated: () => get().actions.notifySceneMutated(),
+        onStats: (stats) => set({ runtimeStats: stats }),
+      });
+      await runtime.play();
+      set({ runtimePlayback: 'playing', runtimeStats: runtime.getStats() });
+      actions.pushConsole({ level: 'info', message: 'Runtime playback started.' });
+    },
+
+    pauseRuntime: () => {
+      getSceneRuntime()?.pause();
+      set({ runtimePlayback: 'paused', runtimeStats: getSceneRuntime()?.getStats() ?? null });
+    },
+
+    resumeRuntime: () => {
+      getSceneRuntime()?.resume();
+      set({ runtimePlayback: 'playing', runtimeStats: getSceneRuntime()?.getStats() ?? null });
+    },
+
+    stopRuntime: async () => {
+      await stopSceneRuntime();
+      set({ runtimePlayback: 'stopped', runtimeStats: null });
+      get().actions.pushConsole({ level: 'info', message: 'Runtime playback stopped.' });
+    },
+
+    stepRuntime: async () => {
+      const runtime = getSceneRuntime();
+      if (!runtime) return;
+      await runtime.stepOnce();
+      get().actions.notifySceneMutated();
+      set({ runtimeStats: runtime.getStats() });
+    },
+
+    notifySceneMutated: () => {
+      const { scene } = get();
+      if (!scene) return;
+      set({ scene });
+    },
+
+    applyImportedPreview: ({ scene, sceneRelativePath, assets, projectTree }) =>
+      set({
+        scene,
+        activeSceneRelativePath: sceneRelativePath,
+        assetRegistry: assets ? { assets, scannedAt: new Date().toISOString() } : get().assetRegistry,
+        projectTree: projectTree ?? get().projectTree,
+        runtimePlayback: 'stopped',
+        runtimeStats: null,
+      }),
   },
 }));

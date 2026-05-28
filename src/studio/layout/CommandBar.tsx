@@ -1,4 +1,4 @@
-import { FileText, Layers, Save, Settings, Sparkles, Zap } from 'lucide-react';
+import { FileText, Layers, Pause, Play, Save, Settings, Sparkles, Square, Zap } from 'lucide-react';
 import { IconButton } from '../../ui/components/IconButton';
 import { ModeSwitcher } from '../modes/ModeSwitcher';
 import { Button } from '../../ui/components/Button';
@@ -14,6 +14,10 @@ export function CommandBar() {
   const pushConsole = useAppState((s) => s.actions.pushConsole);
   const scene = useAppState((s) => s.scene);
   const activeSceneRelativePath = useAppState((s) => s.activeSceneRelativePath);
+  const runtimePlayback = useAppState((s) => s.runtimePlayback);
+  const playRuntime = useAppState((s) => s.actions.playRuntime);
+  const pauseRuntime = useAppState((s) => s.actions.pauseRuntime);
+  const stopRuntime = useAppState((s) => s.actions.stopRuntime);
   const navigate = useNavigate();
 
   return (
@@ -39,6 +43,27 @@ export function CommandBar() {
         <IconButton aria-label="Settings" onClick={() => setSettingsOpen(true)} title="Settings">
           <Settings className="w-4 h-4" />
         </IconButton>
+        <Button variant="secondary" className="h-9" disabled={!scene} onClick={() => void playRuntime()} title="Play runtime">
+          <Play className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="secondary"
+          className="h-9"
+          disabled={runtimePlayback !== 'playing'}
+          onClick={() => pauseRuntime()}
+          title="Pause runtime"
+        >
+          <Pause className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="secondary"
+          className="h-9"
+          disabled={runtimePlayback === 'stopped'}
+          onClick={() => void stopRuntime()}
+          title="Stop runtime"
+        >
+          <Square className="w-4 h-4" />
+        </Button>
         <Button
           variant="secondary"
           className="h-9"

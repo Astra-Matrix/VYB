@@ -139,9 +139,9 @@ export class ImportReportBuilder {
       });
     }
 
-    lines.push('', '## Future Support', '');
-    lines.push('Full Unity, Unreal, and Godot import pipelines are planned for Phase 4.');
-    lines.push('Current implementation provides detection, planning, and honest migration reporting.');
+    lines.push('', '## Import Execution', '');
+    lines.push('Use **Preview Import** or **Run Import** in the Import Report panel to translate Godot scenes and raw asset folders.');
+    lines.push('Unity/Unreal remain partial — assets can be copied; full scene graph translation is ongoing.');
 
     return lines.join('\n');
   }
@@ -154,17 +154,8 @@ export class AssetNormalizer {
   }
 }
 
-export class SceneTranslator {
-  translate(_sourcePath: string): { status: 'planned'; notes: string } {
-    return { status: 'planned', notes: 'Scene translation is planned for Phase 4' };
-  }
-}
-
-export class MaterialTranslator {
-  translate(_sourcePath: string): { status: 'planned'; notes: string } {
-    return { status: 'planned', notes: 'Material translation is planned for Phase 4' };
-  }
-}
+export { GodotSceneTranslator as SceneTranslator } from './translators/GodotSceneTranslator';
+export { MaterialTranslator } from './material/MaterialTranslator';
 
 export class ScriptMigrationNotes {
   getNotes(engine: 'unity' | 'unreal' | 'godot'): string[] {

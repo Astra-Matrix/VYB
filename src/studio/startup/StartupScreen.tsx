@@ -12,6 +12,9 @@ import {
 } from '../../app/workspace/projectWorkspace';
 import { createSampleNodeGraph } from '../../engine/visual-scripting';
 import { isTauri } from '../../app/platform/isTauri';
+import { applyImportToWorkspace } from '../../app/import/runImportPipeline';
+import { BUNDLED_GODOT_IMPORT_ROOT } from '../../engine/import/bundledImportSources';
+import { detector, reportBuilder, planner } from '../../engine/import';
 
 const RECENT_KEY = 'vyb:recentProjects:v1';
 type RecentEntry = { rootPath: string; name: string; at: string };
@@ -36,6 +39,8 @@ export function StartupScreen() {
   const setNodeGraph = useAppState((s) => s.actions.setNodeGraph);
   const setSettingsOpen = useAppState((s) => s.actions.setSettingsOpen);
   const pushConsole = useAppState((s) => s.actions.pushConsole);
+  const setImportReport = useAppState((s) => s.actions.setImportReport);
+  const applyImportedPreview = useAppState((s) => s.actions.applyImportedPreview);
 
   const [recent, setRecent] = useState<RecentEntry[]>([]);
   const [createName, setCreateName] = useState('My VYB Project');
@@ -108,6 +113,51 @@ export function StartupScreen() {
     }
   }
 
+  async function handleGodotImportDemo() {
+    setIsBusy(true);
+    try {
+      const workspace = await bootstrapBundledSampleProject('Godot Import Demo');
+      applyWorkspace(workspace);
+      setNodeGraph(createSampleNodeGraph());
+
+      const detection = detector.detectFromDirectoryListing(BUNDLED_GODOT_IMPORT_ROOT, ['project.godot'], [
+        'project.godot',
+        'scenes/main.tscn',
+      ]);
+      const primary = detection.primary ?? detection.detected[0];
+      if (!primary) throw new Error('Godot sample project not detected.');
+
+      const plan = planner.createPlan(primary);
+      const report = reportBuilder.build(BUNDLED_GODOT_IMPORT_ROOT, detection, plan);
+      setImportReport(report, BUNDLED_GODOT_IMPORT_ROOT);
+
+      await applyImportToWorkspace({
+        source: primary,
+        targetProjectRoot: workspace.rootPath,
+        previewOnly: true,
+        applyWorkspace: (payload) => {
+          applyImportedPreview({
+            scene: payload.scene,
+            sceneRelativePath: payload.defaultSceneRelativePath,
+            assets: payload.assets,
+            projectTree: payload.projectTree,
+          });
+        },
+      });
+
+      rememberRecent(workspace.rootPath, workspace.project.name);
+      pushConsole({ level: 'info', message: 'Loaded Godot import preview (examples/godot-import-sample).' });
+      navigate('/studio');
+    } catch (e) {
+      pushConsole({
+        level: 'error',
+        message: `Godot import demo failed: ${e instanceof Error ? e.message : String(e)}`,
+      });
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
   async function handleOpenRecent(entry: RecentEntry) {
     setIsBusy(true);
     try {
@@ -147,8 +197,7 @@ export function StartupScreen() {
               </div>
 
               <div className="text-sm text-vyb-text/70 leading-relaxed">
-                Phase 1 adds real project I/O, filesystem asset indexing, scene persistence, and improved hierarchy/inspector
-                editing.
+                WebGPU viewport, ECS runtime with script playback, and Godot/raw import pipelines are active in this build.
               </div>
 
               <div className="mt-4 rounded-lg border border-vyb-border/60 bg-black/10 p-3">
@@ -182,6 +231,9 @@ export function StartupScreen() {
                 </Button>
                 <Button variant="secondary" className="w-full" disabled={isBusy} onClick={handleOpenExisting}>
                   {isTauri() ? 'Open Existing Project' : 'Open Bundled Sample'}
+                </Button>
+                <Button variant="secondary" className="w-full" disabled={isBusy} onClick={() => void handleGodotImportDemo()}>
+                  Preview Godot Import (sample)
                 </Button>
               </div>
             </GlassPanel>

@@ -5,6 +5,13 @@ import { ImportReportBuilder } from './ImportReport';
 export * from './ImportDetector';
 export * from './ImportPlanner';
 export * from './ImportReport';
+export * from './ImportMap';
+export * from './ImportFileOps';
+export * from './ImportPipeline';
+export * from './material/VybMaterialFile';
+export * from './material/MaterialTranslator';
+export * from './translators/GodotSceneTranslator';
+export * from './translators/RawAssetSceneBuilder';
 
 const detector = new ImportDetector();
 const planner = new ImportPlanner();

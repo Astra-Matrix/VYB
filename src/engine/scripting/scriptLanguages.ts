@@ -8,10 +8,10 @@ export interface ScriptLanguageDescriptor {
 }
 
 export const SCRIPT_LANGUAGES: ScriptLanguageDescriptor[] = [
-  { language: 'typescript', displayName: 'TypeScript', description: 'Native TS gameplay runtime (planned).', editorHint: 'code' },
-  { language: 'javascript', displayName: 'JavaScript', description: 'JS scripting runtime (planned).', editorHint: 'scripting' },
-  { language: 'lua', displayName: 'Lua', description: 'Embedded Lua runtime (planned).', editorHint: 'scripting' },
-  { language: 'rust', displayName: 'Rust', description: 'Native Rust scripting integration (planned).', editorHint: 'scripting' },
-  { language: 'wasm', displayName: 'WASM', description: 'WASM module scripting runtime (planned).', editorHint: 'scripting' },
+  { language: 'typescript', displayName: 'TypeScript', description: 'Editor gameplay scripts via TS→JS bridge.', editorHint: 'code' },
+  { language: 'javascript', displayName: 'JavaScript', description: 'JavaScript gameplay scripts (onStart/onUpdate).', editorHint: 'scripting' },
+  { language: 'lua', displayName: 'Lua', description: 'Lua bridge stub (Phase 3+).', editorHint: 'scripting' },
+  { language: 'rust', displayName: 'Rust', description: 'Rust bridge stub (future native integration).', editorHint: 'scripting' },
+  { language: 'wasm', displayName: 'WASM', description: 'WASM bridge stub (future sandbox modules).', editorHint: 'scripting' },
 ];
 
