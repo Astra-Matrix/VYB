@@ -24,6 +24,7 @@ VYB’s architecture targets an experience that can eventually exceed Unreal Eng
 - **Phase 5 complete:** Visual scripting node editor, behavior graph runtime, shader graph WGSL compiler.
 - **Phase 6 complete:** Physics/animation/audio/UI/network runtime + vibrant launcher/editor UI.
 - **Phase 7 complete:** Build pipeline, staged exports, deployment manifests, CI artifacts.
+- **Phase 8 complete:** Local AI assistant with import/build/scene/script task drafts.
 
 ## Setup
 1. Install dependencies:

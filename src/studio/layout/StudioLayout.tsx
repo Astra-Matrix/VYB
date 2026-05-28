@@ -10,7 +10,7 @@ import { HardwarePanel } from '../panels/HardwarePanel';
 import { ConsolePanel } from '../console/ConsolePanel';
 import { ViewportPanel } from '../viewport/ViewportPanel';
 import { BuildPanel } from '../panels/BuildPanel';
-import { AIPanelPlaceholder } from '../panels/AIPanelPlaceholder';
+import { AIPanel } from '../panels/AIPanel';
 import { CodeEditorPanel } from '../code/CodeEditorPanel';
 import { VisualScriptingPanel } from '../visual-scripting/VisualScriptingPanel';
 import { ImportReportPanel } from '../panels/ImportReportPanel';
@@ -75,7 +75,7 @@ function RightColumn() {
   if (mode === 'AI') {
     return (
       <div className="h-full p-2">
-        <AIPanelPlaceholder />
+        <AIPanel />
       </div>
     );
   }

@@ -51,8 +51,10 @@ This roadmap is architecture-first. Each phase aims to produce stable interfaces
 - Build panel wired to pipeline; preview mode on web, full export on desktop
 - GitHub Actions CI: lint, test, web dist artifact
 
-## Phase 8 — AI-assisted workflows
-- AI task models + provider wiring
+## Phase 8 — AI-assisted workflows (complete)
+- Local rule-based AI provider (no API keys)
+- AITaskExecutor + studio context builder
+- AI panel with task catalog, markdown output, history
 
 ## Phase 9 — Plugin marketplace and cloud collaboration
 - Marketplace scaffolding
